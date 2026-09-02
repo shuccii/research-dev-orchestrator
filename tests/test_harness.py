@@ -4,15 +4,15 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'benchmarks'))
 from cases import score
-from harness import compare, digest, evaluate_holdout, validate_adjudications
+from harness import compare, digest, evaluate_holdout, evaluator_digest, validate_adjudications
 
 
 def row(case,version,pair,session='session-1',seconds=10.0):
-    return {'benchmark_session_id':session,'run_id':f'{case}-{version}-{pair}','case_id':case,'version':version,'phase':'comparison','pair':pair,'status':'completed','active_wall_clock':seconds,'requested_model':'model','reasoning_effort':'high','pack_sha256':f'pack-{version}','case_sha256':f'case-{case}','grade':{'critical_pass':True,'noncritical_score':1}}
+    return {'benchmark_session_id':session,'run_id':f'{case}-{version}-{pair}','case_id':case,'version':version,'phase':'comparison','pair':pair,'status':'completed','active_wall_clock':seconds,'requested_model':'model','reasoning_effort':'high','pack_sha256':f'pack-{version}','case_sha256':f'case-{case}','evaluator_sha256':'evaluator-1','grade':{'critical_pass':True,'noncritical_score':1}}
 
 
 def config(cases):
-    return {'benchmark_session_id':'session-1','model':'model','effort':'high','pack_sha256':{'v0.1.0':'pack-v0.1.0','working':'pack-working'},'case_sha256':{case:f'case-{case}' for case in cases},'holdout_case_sha256':{'holdout_format':'case-holdout_format','holdout_research':'case-holdout_research'}}
+    return {'benchmark_session_id':'session-1','model':'model','effort':'high','evaluator_sha256':'evaluator-1','pack_sha256':{'v0.1.0':'pack-v0.1.0','working':'pack-working'},'case_sha256':{case:f'case-{case}' for case in cases},'holdout_case_sha256':{'holdout_format':'case-holdout_format','holdout_research':'case-holdout_research'}}
 
 
 class HarnessTests(unittest.TestCase):
@@ -29,6 +29,8 @@ class HarnessTests(unittest.TestCase):
         rows.append(copy.deepcopy(rows[1])); rows[2]['case_sha256']='wrong'
         result=compare(rows,cases=['format'],config=config(['format']))
         self.assertEqual(result['decision'],'insufficient_measurement'); self.assertTrue(result['reasons'])
+        rows=rows[:-1]; rows[0]['evaluator_sha256']='changed'
+        self.assertEqual(compare(rows,cases=['format'],config=config(['format']))['decision'],'insufficient_measurement')
 
     def test_semantic_adjudication_is_bound_to_run(self):
         rows=[row('bugfix','v0.1.0',0),row('bugfix','working',0)]
@@ -92,7 +94,7 @@ class HarnessTests(unittest.TestCase):
 
     def test_report_exit_reflects_gate(self):
         with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory); root.joinpath('benchmark-session.json').write_text(json.dumps(config(['format']))); root.joinpath('metrics.jsonl').write_text('')
+            root=Path(directory); settings=config(['format']); settings['evaluator_sha256']=evaluator_digest(); root.joinpath('benchmark-session.json').write_text(json.dumps(settings)); root.joinpath('metrics.jsonl').write_text('')
             process=subprocess.run([sys.executable,str(ROOT/'benchmarks/harness.py'),'report','--output',directory],capture_output=True,text=True)
             self.assertEqual(process.returncode,1); self.assertIn('insufficient_measurement',process.stdout)
 

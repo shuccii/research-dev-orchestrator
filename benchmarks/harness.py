@@ -32,6 +32,11 @@ def digest(value):
     return hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()
 
 
+def evaluator_digest():
+    value={name:(ROOT/'benchmarks'/name).read_text() for name in ('harness.py','cases.py','PROTOCOL.md')}
+    return digest(value)
+
+
 def frozen_files(ref):
     if ref == 'working':
         paths = ['.codex-plugin/plugin.json'] + [str(p.relative_to(ROOT)) for folder in ('skills','scripts','assets') for p in (ROOT/folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc']
@@ -135,7 +140,7 @@ def run_case(case_id, ref, output, model, effort, timeout, phase, pair, session_
                'elapsed_wall_clock':elapsed,'active_wall_clock':elapsed,'approval_wait':0.0,'approval_wait_basis':'noninteractive pre-set permissions; no human approval channel',
                'status':'infrastructure_error' if infrastructure_failure else 'completed','timed_out':timed_out,'exit_code':proc.returncode,'retries':attempt,
                'requested_model':model,'reasoning_effort':effort,'errors':errors,'grade':grade,'raw_path':str(raw),
-               'pack_sha256':digest(version_files),'case_sha256':digest(case),**summarize_events(events)}
+               'pack_sha256':digest(version_files),'case_sha256':digest(case),'evaluator_sha256':evaluator_digest(),**summarize_events(events)}
         output.mkdir(parents=True,exist_ok=True)
         with (output/'metrics.jsonl').open('a') as handle: handle.write(json.dumps(row,ensure_ascii=False)+'\n')
         print(json.dumps({'case':case_id,'version':ref,'phase':phase,'pair':pair,'status':row['status'],'seconds':round(elapsed,2),'critical_pass':grade['critical_pass'] }),flush=True)
@@ -188,7 +193,7 @@ def compare(rows, cases=None, config=None, adjudications=None):
             for row in (old,new):
                 expected_pack=(config or {}).get('pack_sha256',{}).get(row['version'])
                 expected_case=(config or {}).get('case_sha256',{}).get(case)
-                if config and (row.get('requested_model')!=config['model'] or row.get('reasoning_effort')!=config['effort'] or row.get('pack_sha256')!=expected_pack or row.get('case_sha256')!=expected_case):
+                if config and (row.get('requested_model')!=config['model'] or row.get('reasoning_effort')!=config['effort'] or row.get('pack_sha256')!=expected_pack or row.get('case_sha256')!=expected_case or row.get('evaluator_sha256')!=config['evaluator_sha256']):
                     reasons.append(f'{case} pair {pair}: frozen configuration mismatch')
             if not new['grade']['critical_pass'] or new['grade']['noncritical_score'] < old['grade']['noncritical_score']:
                 quality_failure = True
@@ -214,7 +219,7 @@ def evaluate_holdout(rows, holdout_config, primary_config, adjudications=None):
         if len(matches)!=1: reasons.append(f'{case}: expected exactly one completed holdout run'); continue
         row=matches[0]
         if (row.get('pack_sha256')!=primary_config['pack_sha256']['working'] or row.get('case_sha256')!=primary_config['holdout_case_sha256'][case]
-                or row.get('requested_model')!=primary_config['model'] or row.get('reasoning_effort')!=primary_config['effort']): reasons.append(f'{case}: frozen configuration mismatch')
+                or row.get('requested_model')!=primary_config['model'] or row.get('reasoning_effort')!=primary_config['effort'] or row.get('evaluator_sha256')!=primary_config['evaluator_sha256']): reasons.append(f'{case}: frozen configuration mismatch')
         if not row['grade']['critical_pass']: quality_failure=True; reasons.append(f'{case}: critical checks failed')
         if case!='holdout_format':
             decision=adjudications.get(row['run_id'])
@@ -240,12 +245,14 @@ def main():
     args.output.mkdir(parents=True,exist_ok=True)
     if args.mode == 'report':
         config=json.loads((args.output/'benchmark-session.json').read_text())
+        if evaluator_digest()!=config['evaluator_sha256']: p.error('evaluator changed after primary comparison')
         rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]
         adjudications=validate_adjudications(rows,args.output/'adjudications.jsonl')
         report=compare(rows,config=config,adjudications=adjudications)
         print(json.dumps(report,indent=2)); raise SystemExit(0 if report['decision']=='pass' else 1)
     if args.mode == 'holdout-report':
         primary=json.loads((args.output/'benchmark-session.json').read_text()); holdout=json.loads((args.output/'holdout-session.json').read_text()); rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]
+        if evaluator_digest()!=primary['evaluator_sha256']: p.error('evaluator changed after primary comparison')
         adjudications=validate_adjudications(rows,args.output/'adjudications.jsonl'); report=evaluate_holdout(rows,holdout,primary,adjudications)
         print(json.dumps(report,indent=2)); raise SystemExit(0 if report['decision']=='pass' else 1)
     if args.mode == 'adjudication-template':
@@ -264,6 +271,7 @@ def main():
         report=compare(rows,config=config,adjudications=adjudications)
         if report['decision'] != 'pass': p.error('holdout requires a passing primary comparison')
         if digest(frozen_files('working'))!=config['pack_sha256']['working']: p.error('working pack changed after primary comparison')
+        if evaluator_digest()!=config['evaluator_sha256']: p.error('evaluator changed after primary comparison')
         if args.model!=config['model'] or args.effort!=config['effort']: p.error('holdout model and effort must match primary comparison')
         if any(digest(HOLDOUT[case])!=expected for case,expected in config['holdout_case_sha256'].items()): p.error('holdout fixtures changed after primary comparison')
         cases=list(HOLDOUT)
@@ -272,11 +280,11 @@ def main():
         args.output.mkdir(parents=True,exist_ok=True)
         config_path=args.output/'benchmark-session.json'
         if config_path.exists(): p.error('comparison output already contains a benchmark session; choose a new directory')
-        config_path.write_text(json.dumps({'benchmark_session_id':session_id,'model':args.model,'effort':args.effort,'timeout':args.timeout,'cases':cases,'created_at':utc(),'case_sha256':{case:digest(CASES[case]) for case in cases},'holdout_case_sha256':{case:digest(HOLDOUT[case]) for case in HOLDOUT},'pack_sha256':{ref:digest(frozen_files(ref)) for ref in ('v0.1.0','working')}},indent=2)+'\n')
+        config_path.write_text(json.dumps({'benchmark_session_id':session_id,'model':args.model,'effort':args.effort,'timeout':args.timeout,'cases':cases,'created_at':utc(),'evaluator_sha256':evaluator_digest(),'case_sha256':{case:digest(CASES[case]) for case in cases},'holdout_case_sha256':{case:digest(HOLDOUT[case]) for case in HOLDOUT},'pack_sha256':{ref:digest(frozen_files(ref)) for ref in ('v0.1.0','working')}},indent=2)+'\n')
     elif args.mode=='holdout':
         holdout_path=args.output/'holdout-session.json'
         if holdout_path.exists(): p.error('holdout already executed for this comparison directory')
-        holdout_path.write_text(json.dumps({'benchmark_session_id':session_id,'model':args.model,'effort':args.effort,'created_at':utc(),'case_sha256':config['holdout_case_sha256'],'pack_sha256':{'working':config['pack_sha256']['working']}},indent=2)+'\n')
+        holdout_path.write_text(json.dumps({'benchmark_session_id':session_id,'model':args.model,'effort':args.effort,'created_at':utc(),'evaluator_sha256':config['evaluator_sha256'],'case_sha256':config['holdout_case_sha256'],'pack_sha256':{'working':config['pack_sha256']['working']}},indent=2)+'\n')
     tokens=0
     for n,case in enumerate(cases):
         for pair in range(3 if args.mode=='compare' else 1):

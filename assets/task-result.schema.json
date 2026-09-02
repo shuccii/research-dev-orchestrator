@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Research Dev Orchestrator task result",
+  "type": "object",
+  "required": ["status", "summary", "artifacts", "evidence", "risks", "next_actions", "verification"],
+  "properties": {
+    "status": {"enum": ["completed", "needs_revision", "blocked", "awaiting_approval"]},
+    "summary": {"type": "string", "minLength": 1},
+    "artifacts": {"type": "array", "items": {"type": "string"}},
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "risks": {"type": "array", "items": {"type": "string"}},
+    "next_actions": {"type": "array", "items": {"type": "string"}},
+    "verification": {
+      "type": "object",
+      "required": ["execution", "validity"],
+      "properties": {
+        "execution": {"type": "string", "minLength": 1},
+        "validity": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "additionalProperties": true
+}

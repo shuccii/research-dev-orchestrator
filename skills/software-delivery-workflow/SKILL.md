@@ -1,0 +1,29 @@
+---
+name: software-delivery-workflow
+description: Deliver web or app changes through scoped planning, isolated implementation, testing, security-aware review, and an approval gate before release.
+---
+
+# Software Delivery Workflow
+
+Use this skill for Web, iOS, Android, backend, or full-stack work with multiple independent workstreams.
+
+## Task graph
+
+1. **Planner**: maps the request to acceptance criteria, affected modules, data boundaries, and a test plan.
+2. **Explorer or researcher**: reads the codebase, official documentation, and existing tests; it does not edit production files.
+3. **Implementer**: owns an isolated branch or worktree and a clearly bounded set of files.
+4. **Tester**: runs targeted automated tests and checks the stated acceptance criteria using the implementation artefacts.
+5. **Reviewer**: checks the diff for regressions, security, accessibility, error handling, and documentation impact.
+6. **Release coordinator**: creates a verified handoff for deployment, release, store submission, or publication; it never performs those actions without explicit approval.
+
+Only parallelise implementation tasks with non-overlapping file ownership. Prefer one integrator to resolve all merge conflicts. If an issue crosses ownership boundaries, stop parallel editing and revise the plan.
+
+## Completion requirements
+
+- Run the smallest relevant automated checks first, then broader checks proportional to risk.
+- Report tests that could not run and why.
+- Validate user-visible behavior at the relevant viewport or target device when the request is UI-sensitive.
+- Keep secrets, signing assets, production credentials, and user data out of generated outputs and version control.
+- Treat deploy, publish, submit, delete, payment, and production data changes as approval-required.
+
+Follow `orchestrate-work` for result files, review gates, and approval boundaries.

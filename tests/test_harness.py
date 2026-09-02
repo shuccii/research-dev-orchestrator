@@ -12,7 +12,7 @@ def row(case,version,pair,session='session-1',seconds=10.0):
 
 
 def config(cases):
-    return {'benchmark_session_id':'session-1','model':'model','effort':'high','evaluator_sha256':'evaluator-1','pack_sha256':{'v0.1.0':'pack-v0.1.0','working':'pack-working'},'case_sha256':{case:f'case-{case}' for case in cases},'holdout_case_sha256':{'holdout_format':'case-holdout_format','holdout_research':'case-holdout_research'}}
+    return {'benchmark_session_id':'session-1','model':'model','effort':'high','cases':cases,'evaluator_sha256':'evaluator-1','pack_sha256':{'v0.1.0':'pack-v0.1.0','working':'pack-working'},'case_sha256':{case:f'case-{case}' for case in cases},'holdout_case_sha256':{'holdout_format':'case-holdout_format','holdout_research':'case-holdout_research'}}
 
 
 class HarnessTests(unittest.TestCase):
@@ -107,6 +107,12 @@ class HarnessTests(unittest.TestCase):
             root=Path(directory); settings=config(['format']); settings['evaluator_sha256']=evaluator_digest(); root.joinpath('benchmark-session.json').write_text(json.dumps(settings)); root.joinpath('metrics.jsonl').write_text('')
             process=subprocess.run([sys.executable,str(ROOT/'benchmarks/harness.py'),'report','--output',directory],capture_output=True,text=True)
             self.assertEqual(process.returncode,1); self.assertIn('insufficient_measurement',process.stdout)
+
+    def test_scoped_report_does_not_unlock_holdout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); settings=config(['format']); settings['evaluator_sha256']=evaluator_digest(); root.joinpath('benchmark-session.json').write_text(json.dumps(settings)); root.joinpath('metrics.jsonl').write_text('')
+            process=subprocess.run([sys.executable,str(ROOT/'benchmarks/harness.py'),'holdout','--output',directory],capture_output=True,text=True)
+            self.assertNotEqual(process.returncode,0); self.assertIn('full primary comparison',process.stderr)
 
 
 if __name__=='__main__': unittest.main()

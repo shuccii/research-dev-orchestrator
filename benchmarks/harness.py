@@ -261,7 +261,7 @@ def main():
         if evaluator_digest()!=config['evaluator_sha256']: p.error('evaluator changed after primary comparison')
         rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]
         adjudications=validate_adjudications(rows,args.output/'adjudications.jsonl')
-        report=compare(rows,config=config,adjudications=adjudications)
+        report=compare(rows,cases=config['cases'],config=config,adjudications=adjudications)
         print(json.dumps(report,indent=2)); raise SystemExit(0 if report['decision']=='pass' else 1)
     if args.mode == 'holdout-report':
         primary=json.loads((args.output/'benchmark-session.json').read_text()); holdout=json.loads((args.output/'holdout-session.json').read_text()); rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]
@@ -281,7 +281,8 @@ def main():
     cases = [args.case] if args.case else list(CASES)
     if args.mode == 'holdout':
         config=json.loads((args.output/'benchmark-session.json').read_text()); rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]; adjudications=validate_adjudications(rows,args.output/'adjudications.jsonl')
-        report=compare(rows,config=config,adjudications=adjudications)
+        if set(config['cases'])!=set(CASES): p.error('holdout requires a full primary comparison, not a scoped diagnostic')
+        report=compare(rows,cases=config['cases'],config=config,adjudications=adjudications)
         if report['decision'] != 'pass': p.error('holdout requires a passing primary comparison')
         if digest(frozen_files('working'))!=config['pack_sha256']['working']: p.error('working pack changed after primary comparison')
         if evaluator_digest()!=config['evaluator_sha256']: p.error('evaluator changed after primary comparison')

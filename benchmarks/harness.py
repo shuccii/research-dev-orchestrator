@@ -48,7 +48,7 @@ def frozen_files(ref):
 def summarize_events(events):
     usage = {k:0 for k in ('input_tokens','output_tokens','cached_input_tokens','reasoning_output_tokens')}
     present = set()
-    counts = {'turn_count':0, 'tool_call_count':0, 'observed_subagent_events':0}
+    counts = {'turn_count':0, 'tool_call_count':0, 'observed_subagent_events':0, 'observed_collaboration_events':0, 'observed_spawn_calls':0}
     seen = set()
     for event in events:
         if event.get('type') == 'turn.completed':
@@ -58,14 +58,25 @@ def summarize_events(events):
                     usage[key] += value
                     present.add(key)
         item = event.get('item',{})
-        if event.get('type') == 'item.completed' and item.get('id') not in seen:
+        if event.get('type') in ('item.started','item.completed') and item.get('id') is not None and item.get('id') not in seen:
             seen.add(item.get('id'))
             if item.get('type') in ('command_execution','mcp_tool_call','web_search'):
                 counts['tool_call_count'] += 1
-            if item.get('type') == 'collab_agent_tool_call':
-                counts['observed_subagent_events'] += 1
+            if item.get('type') in ('collab_agent_tool_call','collab_tool_call'):
+                counts['observed_collaboration_events'] += 1
+                counts['tool_call_count'] += 1
+                if item.get('tool') in ('spawn','spawn_agent'):
+                    counts['observed_spawn_calls'] += 1
+                    counts['observed_subagent_events'] += 1
     return {**{k:(v if k in present else None) for k,v in usage.items()}, **counts, 'llm_call_count':None, 'review_count':None, 'subagent_count':None, 'model_observed':None, 'cost':None,
             'unavailable_reason':{'llm_call_count':'turns are not model requests','review_count':'CLI does not identify semantic reviewer roles','subagent_count':'coverage of nested agent telemetry unverified','model_observed':'requested model is not an observed model identity','cost':'no billing data exposed'}}
+
+
+def score_observed_behavior(case_id, grade, telemetry):
+    if case_id in ('format','holdout_format'):
+        grade['critical']['no_collaboration_calls']=telemetry['observed_collaboration_events']==0
+        grade['critical_pass']=grade['critical_pass'] and grade['critical']['no_collaboration_calls']
+    return grade
 
 
 def run_case(case_id, ref, output, model, effort, timeout, phase, pair, session_id, attempt=0):
@@ -131,6 +142,8 @@ def run_case(case_id, ref, output, model, effort, timeout, phase, pair, session_
         elapsed = time.monotonic()-tick
         unsafe_links=[str(path.relative_to(work)) for path in work.rglob('*') if path.is_symlink()]
         grade = score(case_id,work) if not unsafe_links else {'critical':{},'critical_pass':False,'noncritical_score':0,'findings':[],'semantic_adjudication':'pending','error':f'workspace contains symlink(s): {unsafe_links}'}
+        telemetry=summarize_events(events)
+        grade=score_observed_behavior(case_id,grade,telemetry)
         # Only selected outputs, never the real home/config, are retained.
         import shutil
         shutil.copytree(work,raw/'workspace',symlinks=True,ignore=shutil.ignore_patterns('selected-pack','__pycache__'))
@@ -140,7 +153,7 @@ def run_case(case_id, ref, output, model, effort, timeout, phase, pair, session_
                'elapsed_wall_clock':elapsed,'active_wall_clock':elapsed,'approval_wait':0.0,'approval_wait_basis':'noninteractive pre-set permissions; no human approval channel',
                'status':'infrastructure_error' if infrastructure_failure else 'completed','timed_out':timed_out,'exit_code':proc.returncode,'retries':attempt,
                'requested_model':model,'reasoning_effort':effort,'errors':errors,'grade':grade,'raw_path':str(raw),
-               'pack_sha256':digest(version_files),'case_sha256':digest(case),'evaluator_sha256':evaluator_digest(),**summarize_events(events)}
+               'pack_sha256':digest(version_files),'case_sha256':digest(case),'evaluator_sha256':evaluator_digest(),**telemetry}
         output.mkdir(parents=True,exist_ok=True)
         with (output/'metrics.jsonl').open('a') as handle: handle.write(json.dumps(row,ensure_ascii=False)+'\n')
         print(json.dumps({'case':case_id,'version':ref,'phase':phase,'pair':pair,'status':row['status'],'seconds':round(elapsed,2),'critical_pass':grade['critical_pass'] }),flush=True)

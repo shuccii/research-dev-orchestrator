@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'benchmarks'))
 from cases import score
-from harness import compare, digest, evaluate_holdout, evaluator_digest, validate_adjudications
+from harness import compare, digest, evaluate_holdout, evaluator_digest, validate_adjudications, summarize_events, score_observed_behavior
 
 
 def row(case,version,pair,session='session-1',seconds=10.0):
@@ -16,6 +16,16 @@ def config(cases):
 
 
 class HarnessTests(unittest.TestCase):
+    def test_real_cli_collaboration_events_are_counted_and_disallowed_for_format(self):
+        events=[{'type':'item.started','item':{'id':'1','type':'collab_tool_call','tool':'wait','receiver_thread_ids':[]}}, {'type':'item.completed','item':{'id':'1','type':'collab_tool_call','tool':'wait','receiver_thread_ids':[]}}, {'type':'item.completed','item':{'id':'2','type':'collab_agent_tool_call','tool':'spawn_agent','status':'failed'}}]
+        telemetry=summarize_events(events)
+        self.assertEqual(telemetry['observed_collaboration_events'],2)
+        self.assertEqual(telemetry['observed_spawn_calls'],1)
+        self.assertEqual(telemetry['observed_subagent_events'],1)
+        self.assertIsNone(telemetry['subagent_count'])
+        grade=score_observed_behavior('format',{'critical':{'values':True},'critical_pass':True},telemetry)
+        self.assertFalse(grade['critical_pass'])
+
     def test_compare_pass_and_session_isolation(self):
         rows=[]
         for pair in range(3): rows += [row('format','v0.1.0',pair,seconds=10),row('format','working',pair,seconds=8)]

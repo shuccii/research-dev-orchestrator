@@ -1,0 +1,5 @@
+{
+  "status": "blocked",
+  "blocked_reason": "external_dependency",
+  "message": "No valid run after two replacement attempts."
+}

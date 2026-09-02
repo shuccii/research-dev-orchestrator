@@ -7,6 +7,12 @@ description: Coordinate complex research, software, or job-search work with boun
 
 Use this skill when a request has independent workstreams, a research-to-deliverable pipeline, or a meaningful review or approval boundary. Handle a simple question, one-file edit, or strictly sequential change directly.
 
+## Choose the direct path first
+
+For a small, mechanically verifiable operation with no dependencies, parallel work, semantic risk, or approval boundary, the lead performs and checks it directly. Do not create a manifest or result contract, read orchestration schemas, delegate a worker, or wait for a reviewer just to format a file or run an existing check. Report the checked artifact and finish. This path does not enter the structured integration workflow below.
+
+Code changes and scientific or factual judgments are not mechanical operations merely because tests can run. Keep their semantic review gate, even when implementation is performed directly.
+
 ## Route the work
 
 The lead owns the plan, final answer, validation rules, and integration. Delegate only bounded tasks with distinct outcomes and write scopes. Use at most three concurrent workers by default, and parallelize only when tasks have no dependency or write-scope conflict and coordination is likely to save time.

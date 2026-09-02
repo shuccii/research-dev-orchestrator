@@ -1,58 +1,34 @@
 ---
 name: orchestrate-work
-description: Coordinate complex research, software, or job-search work by decomposing it into safe parallel tasks, capturing evidence, reviewing outputs, and integrating only verified results.
+description: Coordinate complex research, software, or job-search work with bounded parallel tasks, machine-readable evidence, independent review, and explicit approval boundaries.
 ---
 
 # Orchestrate Work
 
-Use this skill for work that has two or more independent workstreams, requires a research-to-deliverable pipeline, or needs a durable review and approval boundary. Work directly for a simple question, single-file edit, or strictly sequential task.
+Use this skill when a request has independent workstreams, a research-to-deliverable pipeline, or a meaningful review or approval boundary. Handle a simple question, one-file edit, or strictly sequential change directly.
 
-## 1. Establish the run contract
+## Route the work
 
-Before delegation, state the requested outcome, artefacts, validation criteria, editable paths, and any external side effects. Create a run directory under the current project at `runs/<YYYY-MM-DD>-<short-slug>/`. Do not create it outside the project.
+The lead owns the plan, final answer, validation rules, and integration. Delegate only bounded tasks with distinct outcomes and write scopes. Use at most three concurrent workers by default, and parallelize only when tasks have no dependency or write-scope conflict and coordination is likely to save time.
 
-Classify every requested operation as one of:
+Give each worker its objective, inputs, permitted paths and tools, required artifacts and checks, stop condition, and output location. For code changes, use isolated worktrees or branches. A branch name alone is not isolation.
 
-- `read_only`: inspect, search, analyse, or draft.
-- `reversible_write`: create a branch, draft, local file, or uncommitted change.
-- `approval_required`: submit an application, send a message, publish, deploy, spend money, change production data, or delete material data.
+Use a task manifest when a run has more than three tasks, delegated work, dependency ordering, parallel candidates, budgets, or approval-required operations. Read [the v0.2 contract](references/v0.2-contract.md) before creating or validating a manifest or result.
 
-Never perform an `approval_required` operation. Prepare a verified handoff describing the exact target, current state, and next click or command, then wait for explicit approval.
+## Validate and integrate
 
-## 2. Decompose and assign
+Workers save structured results in the run directory. Validate a manifest before delegation, then validate each result against that same manifest. A completed result without a manifest is not integration-eligible.
 
-Use a central manager pattern: the lead agent owns the user-facing result, task plan, validation rules, and integration. Delegate a bounded task only when it has a distinct outcome, inputs, and write scope.
+Keep execution success separate from scientific, technical, or factual validity. Require independent semantic review for research conclusions, external facts, statistical design, data leakage, security-sensitive work, job claims, and implementation changes. A unit-test pass confirms the tested behavior; it does not establish that a code change preserves intent.
 
-Delegate independent tasks in parallel only if all of the following are true:
+Give reviewers the run and task contracts, relevant diff, artifact and evidence indexes, and references needed for semantic judgment. Let them retrieve additional source material when required.
 
-1. Neither task depends on the other task's result.
-2. Their write scopes do not overlap.
-3. Each task can return an auditable result without access to another worker's hidden reasoning.
-4. The expected gain exceeds the coordination cost.
+Integrate only results that pass the required checks and review. Report actual artifacts and checks, unresolved limitations, unavailable metrics, and approval-required next actions.
 
-For code changes, assign each implementation task an isolated Git worktree or branch. Do not let multiple workers edit the same file. Research and review workers should be read-only unless their deliverable explicitly requires a separate draft file.
+## Approval and budget boundaries
 
-Use at most three concurrent workers by default. Give every worker: objective, supplied inputs, permitted tools and paths, required artefacts, validation command or method, stop condition, and the result contract below.
+Classify operations as `read_only`, `reversible_write`, or `approval_required`. Treat submissions, messages, publication, deployment, spending, production-data changes, and material deletion as approval-required. A manifest is a preflight record; enforcement comes from the active Codex sandbox and approval controls.
 
-## 3. Require an auditable result
+Represent approval operations as tasks. User approval authorizes the operation but does not complete it; release dependent tasks only after the operation succeeds and its result is verified. Present independent ready approvals together when useful.
 
-Every worker must save `result.json` in its assigned run subdirectory and return a concise summary. Use the schema in `assets/task-result.schema.json`; validate it with `scripts/validate_task_result.py` before integration.
-
-The result must distinguish:
-
-- what completed from what merely was attempted;
-- execution success from scientific, technical, or factual validity;
-- direct evidence from inference;
-- unresolved risks from accepted limitations.
-
-If any required field is missing, evidence is absent, or validation fails, set the task to `needs_revision`; do not silently promote it to complete.
-
-## 4. Review gate and integration
-
-Assign a reviewer when work changes code, derives a research conclusion, uses external facts, or affects an application. The reviewer checks the deliverable against the run contract and may not approve its own implementation without a separate validation method.
-
-Only integrate results after the review gate passes. The lead then records an `integration.md` containing: included artefacts, verification evidence, excluded or unresolved items, and any approval-required next action.
-
-## 5. Report clearly
-
-Lead with the delivered outcome. Name the artefacts, commands or checks actually run, material limitations, and any handoff awaiting the user's approval. Do not claim completion for a task that only executed without passing its validation criteria.
+Do not substitute turn or tool counts for unavailable LLM-call counts. If a hard budget depends on an unobservable metric, stop with `blocked_reason: budget_unobservable`.

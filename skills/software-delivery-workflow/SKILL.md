@@ -26,4 +26,4 @@ Only parallelise implementation tasks with non-overlapping file ownership. Prefe
 - Keep secrets, signing assets, production credentials, and user data out of generated outputs and version control.
 - Treat deploy, publish, submit, delete, payment, and production data changes as approval-required.
 
-Follow `orchestrate-work` for result files, review gates, and approval boundaries.
+Classify code changes as `implementation_change` and require semantic review of the diff and intent. Reserve `unit_test_execution` for running and collecting an already specified test suite. Follow `orchestrate-work` for manifests, results, and approval boundaries.

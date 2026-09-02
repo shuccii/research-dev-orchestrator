@@ -29,4 +29,4 @@ Run data auditing independently from literature or domain-context research. Do n
 - Separate predictive association from causal interpretation.
 - Record any unavailable raw data or unexecuted calculation as a limitation, not a result.
 
-Follow `orchestrate-work` for result files, review gates, and approval boundaries.
+Use `semantic_review_required` for research conclusions, statistical design, data leakage, and interpretation. Follow `orchestrate-work` for task manifests, structured results, review gates, and approval boundaries.

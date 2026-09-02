@@ -1,0 +1,15 @@
+{
+  "tag": "v0.1.0",
+  "commit": "07c9ca2a1ef447f10b1199a0f228c133d22296b3",
+  "all_match": true,
+  "files": {
+    ".codex-plugin/plugin.json": {"sha256": "81145405d3385e3ddbfa91ff8c96ad838f9a5de344d3d0aa63fcb7bd41a3daa5"},
+    "assets/task-result.schema.json": {"sha256": "44f9d449b506b9a44ee40bc20f56ebcc39ef8bb397d4b4b54c83effdbad7e4d4"},
+    "scripts/validate_task_result.py": {"sha256": "6998fe0932679df804f63f7c5b1d73be9f971e30332e4914fa54e35fea5604f2"},
+    "skills/job-search-workflow/SKILL.md": {"sha256": "a08a76a534d57aa6afaedac65580d2d913194fe397357246dae04f9b34afac76"},
+    "skills/orchestrate-work/SKILL.md": {"sha256": "b90e55992a4799abd5926e603e705e851c112abc9d4e31e6bc310c6933eac545"},
+    "skills/research-ml-workflow/SKILL.md": {"sha256": "2a97dcfee97f50fb477876b2ce81e85e3c6868d71bf7f6bcae3c1607ac230cbc"},
+    "skills/software-delivery-workflow/SKILL.md": {"sha256": "878945f82ba8095552033dcf43a1846949b4d87fbf28918babac23c9390211c0"}
+  },
+  "note": "Each recorded file matched the installed personal plugin cache before v0.2 edits."
+}

@@ -16,4 +16,4 @@ Use this skill for company research, opportunity tracking, application-material 
 
 Do not solve or enter answers for an explicitly AI-prohibited graded test or employment aptitude test. Do not submit applications, send messages, accept terms, upload sensitive documents, or register accounts. Prepare a user-verifiable handoff instead.
 
-Follow `orchestrate-work` for result files, review gates, and approval boundaries.
+Use `semantic_review_required` for external facts and job claims. Follow `orchestrate-work` for manifests, structured results, and approval boundaries.

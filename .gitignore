@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv*/
+benchmarks/private.local.*
+runs/
+baseline/raw/
+benchmark-results/raw/

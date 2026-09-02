@@ -1,0 +1,13 @@
+{
+  "version": "v0.1.0",
+  "status": "preliminary_only",
+  "protocol_note": "One complete six-case pilot was collected before v0.2 release comparison. A separate earlier format smoke run is excluded. Final release values must come from paired alternating runs in a fresh comparison directory.",
+  "cases": {
+    "format": {"active_wall_clock_seconds": 29.70, "critical_pass": true, "input_tokens": 80487, "output_tokens": 780},
+    "independent_modules": {"active_wall_clock_seconds": 176.78, "critical_pass": true, "input_tokens": 370883, "output_tokens": 7999},
+    "bugfix": {"active_wall_clock_seconds": 166.28, "critical_pass": true, "input_tokens": 341131, "output_tokens": 7552},
+    "sources": {"active_wall_clock_seconds": 211.41, "critical_pass": true, "input_tokens": 453641, "output_tokens": 6248},
+    "research_defects": {"active_wall_clock_seconds": 168.78, "critical_pass": true, "input_tokens": 293943, "output_tokens": 6039},
+    "job_defects": {"active_wall_clock_seconds": 145.77, "critical_pass": true, "input_tokens": 266641, "output_tokens": 6480}
+  }
+}

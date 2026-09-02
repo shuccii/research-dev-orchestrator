@@ -67,9 +67,10 @@ class HarnessTests(unittest.TestCase):
 
     def test_invalid_timeout_and_unobservable_budget_exit_nonzero(self):
         with tempfile.TemporaryDirectory() as directory:
-            base=[sys.executable,str(ROOT/'benchmarks/harness.py'),'pilot','--output',directory]
+            nested=str(Path(directory)/'missing'/'nested'); base=[sys.executable,str(ROOT/'benchmarks/harness.py'),'pilot','--output',nested]
             bad=subprocess.run(base+['--timeout','nan'],capture_output=True,text=True); self.assertNotEqual(bad.returncode,0)
-            blocked=subprocess.run(base+['--max-llm-calls','1'],capture_output=True,text=True); self.assertNotEqual(blocked.returncode,0); self.assertTrue((Path(directory)/'preflight.json').exists())
+            zero=subprocess.run(base+['--max-total-tokens','0'],capture_output=True,text=True); self.assertEqual(zero.returncode,2)
+            blocked=subprocess.run(base+['--max-llm-calls','1'],capture_output=True,text=True); self.assertNotEqual(blocked.returncode,0); self.assertTrue((Path(nested)/'preflight.json').exists())
 
     def test_holdout_gate_rejects_missing_primary(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -235,6 +235,9 @@ def main():
     p.add_argument('--max-total-tokens',type=int)
     args = p.parse_args()
     if not math.isfinite(args.timeout) or args.timeout<=0: p.error('--timeout must be finite and positive')
+    if args.max_total_tokens is not None and args.max_total_tokens<=0: p.error('--max-total-tokens must be positive')
+    if args.max_llm_calls is not None and args.max_llm_calls<=0: p.error('--max-llm-calls must be positive')
+    args.output.mkdir(parents=True,exist_ok=True)
     if args.mode == 'report':
         config=json.loads((args.output/'benchmark-session.json').read_text())
         rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]
@@ -251,7 +254,6 @@ def main():
         target.write_text('\n'.join(json.dumps({'benchmark_session_id':row['benchmark_session_id'],'run_id':row['run_id'],'case_id':row['case_id'],'version':row['version'],'passed':False,'critical_failures':['REVIEW_REQUIRED'],'reviewer_id':'REPLACE_WITH_INDEPENDENT_REVIEWER_ID','reviewed_at':utc()}) for row in rows if row['case_id']!='format')+'\n')
         print(target); return
     if args.max_llm_calls is not None:
-        args.output.mkdir(parents=True,exist_ok=True)
         result={'status':'blocked','blocked_reason':'budget_unobservable','message':'LLM request count is not exposed by the supported CLI event adapter.'}
         (args.output/'preflight.json').write_text(json.dumps(result,indent=2)+'\n')
         print(json.dumps(result))

@@ -68,6 +68,8 @@ def check_one(path,schema,manifest,legacy):
             special=read(ROOT/'assets/verification-policy.json')['approval_operation_success']
             if not operation or operation['type'] not in special['allowed_check_types'] or operation['observed_by'] not in special['allowed_observers']:
                 errors.append('$.verification.checks.operation_success: violates approval success policy')
+            elif approval['operation_succeeded'] != (operation['result']=='passed'):
+                errors.append('$.approval.operation_succeeded: must agree with the operation_success check result')
     if data['status']=='completed':
         if not data['evidence']: errors.append('$.evidence: completed requires evidence')
         for check_id in required:

@@ -58,6 +58,13 @@ class ContractTests(unittest.TestCase):
             rp=Path(directory)/'result.json'; mp=Path(directory)/'manifest.json'; rp.write_text(json.dumps(d)); mp.write_text(json.dumps(manifest))
             p=subprocess.run([sys.executable,str(SCRIPTS/'validate_task_result.py'),'--json','--manifest',str(mp),str(rp)],capture_output=True,text=True)
             self.assertNotEqual(p.returncode,0); self.assertIn('pending or approved',p.stdout)
+    def test_approval_operation_boolean_matches_check(self):
+        d=copy.deepcopy(self.valid); d['status']='blocked'; d['blocked_reason']='external_dependency'; d['approval']={'required':True,'status':'approved','approved_by':'user','operation_succeeded':True}; d['verification']['required_checks']=['operation_success']; d['verification']['checks'][0].update(check_id='operation_success',type='file_exists',result='failed',observed_by='harness')
+        manifest=copy.deepcopy(load('manifest.valid.json')); manifest['tasks'][0].update(operation_class='approval_required',verification_mode='semantic_review_required',required_checks=['operation_success'])
+        with tempfile.TemporaryDirectory() as directory:
+            rp=Path(directory)/'result.json'; mp=Path(directory)/'manifest.json'; rp.write_text(json.dumps(d)); mp.write_text(json.dumps(manifest))
+            p=subprocess.run([sys.executable,str(SCRIPTS/'validate_task_result.py'),'--json','--manifest',str(mp),str(rp)],capture_output=True,text=True)
+            self.assertNotEqual(p.returncode,0); self.assertIn('must agree',p.stdout)
     def test_legacy_is_explicit_and_archive_only(self):
         data=load('result.legacy.json'); self.assertNotEqual(run_result(data,manifest=False).returncode,0)
         p=run_result(data,manifest=False,legacy=True); self.assertEqual(p.returncode,0); self.assertFalse(json.loads(p.stdout)['results'][0]['completion_eligible'])

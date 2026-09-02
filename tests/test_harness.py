@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'benchmarks'))
 from cases import score
-from harness import compare, digest, validate_adjudications
+from harness import compare, digest, evaluate_holdout, validate_adjudications
 
 
 def row(case,version,pair,session='session-1',seconds=10.0):
@@ -12,7 +12,7 @@ def row(case,version,pair,session='session-1',seconds=10.0):
 
 
 def config(cases):
-    return {'benchmark_session_id':'session-1','model':'model','effort':'high','pack_sha256':{'v0.1.0':'pack-v0.1.0','working':'pack-working'},'case_sha256':{case:f'case-{case}' for case in cases}}
+    return {'benchmark_session_id':'session-1','model':'model','effort':'high','pack_sha256':{'v0.1.0':'pack-v0.1.0','working':'pack-working'},'case_sha256':{case:f'case-{case}' for case in cases},'holdout_case_sha256':{'holdout_format':'case-holdout_format','holdout_research':'case-holdout_research'}}
 
 
 class HarnessTests(unittest.TestCase):
@@ -40,6 +40,8 @@ class HarnessTests(unittest.TestCase):
             self.assertEqual(len(validate_adjudications(rows,path)),2)
             decisions[0]['case_id']='format'; path.write_text(json.dumps(decisions[0])+'\n')
             with self.assertRaises(ValueError): validate_adjudications(rows,path)
+            decisions[0]['case_id']='bugfix'; decisions[0]['passed']=True; decisions[0]['critical_failures']=['contradiction']; path.write_text(json.dumps(decisions[0])+'\n')
+            with self.assertRaises(ValueError): validate_adjudications(rows,path)
 
     def test_failed_semantic_review_is_quality_failure(self):
         rows=[]; decisions={}
@@ -57,6 +59,12 @@ class HarnessTests(unittest.TestCase):
             (root/'test_average.py').write_text('def test_placeholder(): pass\n')
             self.assertTrue(score('bugfix',root)['critical_pass']); self.assertFalse(marker.exists())
 
+    def test_noncritical_rubric_is_nonconstant(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); (root/'input.json').write_text('{"a": 1}\n'); (root/'formatted.json').write_text('{\n  "a": 1\n}')
+            first=score('format',root); self.assertEqual(first['noncritical'],{'terminal_newline':False})
+            (root/'formatted.json').write_text('{\n  "a": 1\n}\n'); self.assertGreater(score('format',root)['noncritical_score'],first['noncritical_score'])
+
     def test_invalid_timeout_and_unobservable_budget_exit_nonzero(self):
         with tempfile.TemporaryDirectory() as directory:
             base=[sys.executable,str(ROOT/'benchmarks/harness.py'),'pilot','--output',directory]
@@ -68,6 +76,24 @@ class HarnessTests(unittest.TestCase):
             root=Path(directory); root.joinpath('benchmark-session.json').write_text(json.dumps(config(['format']))); root.joinpath('metrics.jsonl').write_text('')
             process=subprocess.run([sys.executable,str(ROOT/'benchmarks/harness.py'),'holdout','--output',directory],capture_output=True,text=True)
             self.assertNotEqual(process.returncode,0)
+
+    def test_holdout_report_requires_quality_and_review(self):
+        primary=config(['format']); primary['pack_sha256']['working']='pack-working'
+        holdout={'benchmark_session_id':'holdout-1','case_sha256':{'holdout_format':'case-holdout_format','holdout_research':'case-holdout_research'}}
+        rows=[]
+        for case in ('holdout_format','holdout_research'):
+            item=row(case,'working',0,session='holdout-1',seconds=8); item['phase']='holdout'; rows.append(item)
+        self.assertEqual(evaluate_holdout(rows,holdout,primary)['decision'],'insufficient_measurement')
+        decisions={rows[1]['run_id']:{'passed':True}}
+        self.assertEqual(evaluate_holdout(rows,holdout,primary,decisions)['decision'],'pass')
+        rows[1]['requested_model']='other'
+        self.assertEqual(evaluate_holdout(rows,holdout,primary,decisions)['decision'],'insufficient_measurement')
+
+    def test_report_exit_reflects_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); root.joinpath('benchmark-session.json').write_text(json.dumps(config(['format']))); root.joinpath('metrics.jsonl').write_text('')
+            process=subprocess.run([sys.executable,str(ROOT/'benchmarks/harness.py'),'report','--output',directory],capture_output=True,text=True)
+            self.assertEqual(process.returncode,1); self.assertIn('insufficient_measurement',process.stdout)
 
 
 if __name__=='__main__': unittest.main()

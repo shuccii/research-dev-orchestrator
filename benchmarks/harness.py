@@ -154,6 +154,7 @@ def validate_adjudications(rows, path):
         if not row or any(item[key]!=row[key] for key in ('benchmark_session_id','case_id','version')): raise ValueError(f'{path}:{number}: adjudication does not match a measured run')
         if item['run_id'] in result: raise ValueError(f'{path}:{number}: duplicate run_id')
         if not isinstance(item['passed'],bool) or not isinstance(item['critical_failures'],list) or not all(isinstance(v,str) for v in item['critical_failures']): raise ValueError(f'{path}:{number}: invalid decision fields')
+        if item['passed'] == bool(item['critical_failures']): raise ValueError(f'{path}:{number}: passed must be true exactly when critical_failures is empty')
         if not isinstance(item['reviewer_id'],str) or not item['reviewer_id'].strip(): raise ValueError(f'{path}:{number}: reviewer_id required')
         try: datetime.fromisoformat(item['reviewed_at'].replace('Z','+00:00'))
         except (ValueError,AttributeError): raise ValueError(f'{path}:{number}: reviewed_at must be ISO-8601')
@@ -205,9 +206,26 @@ def compare(rows, cases=None, config=None, adjudications=None):
             'quality_failure':quality_failure,'speed_pass':speed,'paired_ratio_median':median,'per_case_ratio_median':per_case,'reasons':sorted(set(reasons))}
 
 
+def evaluate_holdout(rows, holdout_config, primary_config, adjudications=None):
+    adjudications=adjudications or {}; reasons=[]; quality_failure=False
+    selected=[row for row in rows if row.get('benchmark_session_id')==holdout_config['benchmark_session_id'] and row.get('phase')=='holdout']
+    for case in HOLDOUT:
+        matches=[row for row in selected if row['case_id']==case and row['version']=='working' and row['status']=='completed']
+        if len(matches)!=1: reasons.append(f'{case}: expected exactly one completed holdout run'); continue
+        row=matches[0]
+        if (row.get('pack_sha256')!=primary_config['pack_sha256']['working'] or row.get('case_sha256')!=primary_config['holdout_case_sha256'][case]
+                or row.get('requested_model')!=primary_config['model'] or row.get('reasoning_effort')!=primary_config['effort']): reasons.append(f'{case}: frozen configuration mismatch')
+        if not row['grade']['critical_pass']: quality_failure=True; reasons.append(f'{case}: critical checks failed')
+        if case!='holdout_format':
+            decision=adjudications.get(row['run_id'])
+            if decision is None: reasons.append(f'{case}: independent semantic adjudication pending')
+            elif decision['passed'] is False: quality_failure=True; reasons.append(f'{case}: independent semantic adjudication failed')
+    return {'decision':'fail' if quality_failure else ('insufficient_measurement' if reasons else 'pass'),'quality_failure':quality_failure,'reasons':reasons}
+
+
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('mode',choices=['pilot','compare','report','holdout','adjudication-template'])
+    p.add_argument('mode',choices=['pilot','compare','report','holdout','holdout-report','adjudication-template'])
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--model',default='gpt-5.6-terra')
     p.add_argument('--effort',default='high')
@@ -221,8 +239,12 @@ def main():
         config=json.loads((args.output/'benchmark-session.json').read_text())
         rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]
         adjudications=validate_adjudications(rows,args.output/'adjudications.jsonl')
-        print(json.dumps(compare(rows,config=config,adjudications=adjudications),indent=2))
-        return
+        report=compare(rows,config=config,adjudications=adjudications)
+        print(json.dumps(report,indent=2)); raise SystemExit(0 if report['decision']=='pass' else 1)
+    if args.mode == 'holdout-report':
+        primary=json.loads((args.output/'benchmark-session.json').read_text()); holdout=json.loads((args.output/'holdout-session.json').read_text()); rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]
+        adjudications=validate_adjudications(rows,args.output/'adjudications.jsonl'); report=evaluate_holdout(rows,holdout,primary,adjudications)
+        print(json.dumps(report,indent=2)); raise SystemExit(0 if report['decision']=='pass' else 1)
     if args.mode == 'adjudication-template':
         rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]
         target=args.output/'adjudications.template.jsonl'
@@ -239,13 +261,20 @@ def main():
         config=json.loads((args.output/'benchmark-session.json').read_text()); rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]; adjudications=validate_adjudications(rows,args.output/'adjudications.jsonl')
         report=compare(rows,config=config,adjudications=adjudications)
         if report['decision'] != 'pass': p.error('holdout requires a passing primary comparison')
+        if digest(frozen_files('working'))!=config['pack_sha256']['working']: p.error('working pack changed after primary comparison')
+        if args.model!=config['model'] or args.effort!=config['effort']: p.error('holdout model and effort must match primary comparison')
+        if any(digest(HOLDOUT[case])!=expected for case,expected in config['holdout_case_sha256'].items()): p.error('holdout fixtures changed after primary comparison')
         cases=list(HOLDOUT)
     session_id=str(uuid.uuid4())
     if args.mode=='compare':
         args.output.mkdir(parents=True,exist_ok=True)
         config_path=args.output/'benchmark-session.json'
         if config_path.exists(): p.error('comparison output already contains a benchmark session; choose a new directory')
-        config_path.write_text(json.dumps({'benchmark_session_id':session_id,'model':args.model,'effort':args.effort,'timeout':args.timeout,'cases':cases,'created_at':utc(),'case_sha256':{case:digest(CASES[case]) for case in cases},'pack_sha256':{ref:digest(frozen_files(ref)) for ref in ('v0.1.0','working')}},indent=2)+'\n')
+        config_path.write_text(json.dumps({'benchmark_session_id':session_id,'model':args.model,'effort':args.effort,'timeout':args.timeout,'cases':cases,'created_at':utc(),'case_sha256':{case:digest(CASES[case]) for case in cases},'holdout_case_sha256':{case:digest(HOLDOUT[case]) for case in HOLDOUT},'pack_sha256':{ref:digest(frozen_files(ref)) for ref in ('v0.1.0','working')}},indent=2)+'\n')
+    elif args.mode=='holdout':
+        holdout_path=args.output/'holdout-session.json'
+        if holdout_path.exists(): p.error('holdout already executed for this comparison directory')
+        holdout_path.write_text(json.dumps({'benchmark_session_id':session_id,'model':args.model,'effort':args.effort,'created_at':utc(),'case_sha256':config['holdout_case_sha256'],'pack_sha256':{'working':config['pack_sha256']['working']}},indent=2)+'\n')
     tokens=0
     for n,case in enumerate(cases):
         for pair in range(3 if args.mode=='compare' else 1):
@@ -261,6 +290,9 @@ def main():
                     if row['status']=='completed': break
                 else:
                     blocked={'status':'blocked','blocked_reason':'external_dependency','message':'No valid run after two replacement attempts.'}; (args.output/'blocked.json').write_text(json.dumps(blocked,indent=2)+'\n'); print(json.dumps(blocked)); raise SystemExit(2)
+    if args.mode=='holdout':
+        rows=[json.loads(l) for l in (args.output/'metrics.jsonl').read_text().splitlines()]; adjudications=validate_adjudications(rows,args.output/'adjudications.jsonl'); report=evaluate_holdout(rows,json.loads((args.output/'holdout-session.json').read_text()),config,adjudications)
+        print(json.dumps(report)); raise SystemExit(0 if report['decision']=='pass' else 1)
 
 
 if __name__=='__main__': main()

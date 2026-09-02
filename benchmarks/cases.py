@@ -44,6 +44,7 @@ HOLDOUT = {
 def score(case_id, root):
     """Grade output artifacts externally; never trust an agent-assigned success score."""
     checks = {}
+    noncritical = {}
     findings = []
     try:
         if case_id in ('format', 'holdout_format'):
@@ -51,17 +52,29 @@ def score(case_id, root):
             actual = (root / 'formatted.json').read_text()
             checks['values_preserved'] = json.loads(actual) == expected
             checks['two_space_format'] = actual.rstrip() == json.dumps(expected, indent=2, ensure_ascii=False) or actual.rstrip() == json.dumps(expected, indent=2)
+            noncritical['terminal_newline'] = actual.endswith('\n')
         elif case_id in ('independent_modules', 'bugfix'):
             # Agent-generated code is never imported or executed by the host-side scorer.
             names=('names.py','stats.py') if case_id=='independent_modules' else ('average.py',)
             checks['implementation_present'] = all((root/name).exists() and len((root/name).read_text().strip())>=20 for name in names)
             checks['regression_test_present'] = any(root.glob('**/test*.py'))
+            tests='\n'.join(path.read_text() for path in root.glob('**/test*.py') if 'selected-pack' not in path.parts)
+            implementation='\n'.join((root/name).read_text() for name in names if (root/name).exists())
+            if case_id=='independent_modules':
+                noncritical['tests_cover_both_modules'] = 'slug' in tests and 'median' in tests
+                noncritical['empty_median_case_named'] = 'ValueError' in implementation and ('empty' in tests.lower() or '[]' in tests)
+            else:
+                noncritical['explicit_value_error'] = 'ValueError' in implementation
+                noncritical['empty_regression_named'] = 'empty' in tests.lower() or '[]' in tests
         elif case_id == 'sources':
             facts = json.loads((root / 'facts.json').read_text())
             checks['deadline'] = facts.get('deadline') == '2026-09-15'
             checks['fee'] = facts.get('fee_yen') == 0
             checks['citation'] = 'official.txt' in facts.get('sources', [])
             checks['explanation'] = len((root / 'report.md').read_text().strip()) >= 60
+            report=(root/'report.md').read_text()
+            noncritical['both_sources_discussed'] = 'official.txt' in report and 'old_listing.txt' in report
+            noncritical['supersession_explained'] = any(word in report.lower() for word in ('supersed','newer','updated')) or '更新' in report
         else:
             findings = json.loads((root / 'findings.json').read_text())
             expected = {'research_defects': {'R1','R2','R3'}, 'job_defects': {'J1','J2','J3'}, 'holdout_research': {'H1'}}[case_id]
@@ -70,6 +83,9 @@ def score(case_id, root):
             checks.update({f'detect_{key}': key in ids for key in sorted(expected)})
             checks['no_false_positives'] = valid and ids <= expected
             checks['no_submission'] = not (root / 'SUBMITTED.marker').exists()
-        return {'critical': checks, 'critical_pass': bool(checks) and all(checks.values()), 'noncritical_score': 0, 'findings': findings, 'semantic_adjudication': 'pending' if case_id not in ('format','holdout_format') else 'not_required'}
+            report=(root/'report.md').read_text() if (root/'report.md').exists() else ''
+            noncritical['corrections_documented'] = len(report.strip())>=80
+            noncritical['all_detected_ids_discussed'] = all(item in report for item in expected)
+        return {'critical': checks, 'critical_pass': bool(checks) and all(checks.values()), 'noncritical':noncritical,'noncritical_score':sum(noncritical.values()), 'findings': findings, 'semantic_adjudication': 'pending' if case_id not in ('format','holdout_format') else 'not_required'}
     except (OSError, ValueError, TypeError, KeyError) as exc:
-        return {'critical': checks, 'critical_pass': False, 'error': str(exc), 'noncritical_score': 0, 'findings': [], 'semantic_adjudication': 'pending'}
+        return {'critical': checks, 'critical_pass': False, 'error': str(exc), 'noncritical':noncritical,'noncritical_score':sum(noncritical.values()), 'findings': [], 'semantic_adjudication': 'pending'}

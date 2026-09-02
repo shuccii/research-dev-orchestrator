@@ -32,6 +32,11 @@ class HarnessTests(unittest.TestCase):
         grade=score_observed_behavior('independent_modules',{'critical':{'artifacts':True},'critical_pass':True},telemetry)
         self.assertFalse(grade['critical_pass'])
 
+    def test_lifecycle_metadata_can_bind_a_started_wait(self):
+        events=[{'type':'item.started','item':{'id':'wait-1','type':'collab_tool_call','tool':'wait'}},{'type':'item.completed','item':{'id':'wait-1','type':'collab_tool_call','tool':'wait','receiver_thread_ids':['worker-1']}}]
+        telemetry=summarize_events(events)
+        self.assertEqual(telemetry['observed_collaboration_events'],1); self.assertEqual(telemetry['observed_unbound_waits'],0)
+
     def test_compare_pass_and_session_isolation(self):
         rows=[]
         for pair in range(3): rows += [row('format','v0.1.0',pair,seconds=10),row('format','working',pair,seconds=8)]
@@ -86,9 +91,15 @@ class HarnessTests(unittest.TestCase):
     def test_parallel_candidate_contract_is_graded(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory); (root/'names.py').write_text('def slug(value): return value\n'); (root/'stats.py').write_text('def median(value): return value\n'); (root/'test_modules.py').write_text('def test_slug_and_median(): pass\n')
-            run=root/'runs'; run.mkdir(); manifest={'tasks':[{'task_id':'names','depends_on':[],'write_scope':[{'path':'names.py'}]},{'task_id':'stats','depends_on':[],'write_scope':[{'path':'stats.py'}]}]}; (run/'tasks.json').write_text(json.dumps(manifest))
+            run=root/'runs'; run.mkdir(); manifest={'schema_version':'0.2.0','run_id':'test-run','budget':{'max_wall_clock_seconds':300,'max_retries':1},'tasks':[{'task_id':'names','parent_task_id':None,'goal':'names','depends_on':[],'write_scope':[{'path':'names.py','kind':'file'}],'operation_class':'reversible_write','verification_mode':'semantic_review_required','risk_tags':['implementation_change'],'required_checks':['review']},{'task_id':'stats','parent_task_id':None,'goal':'stats','depends_on':[],'write_scope':[{'path':'stats.py','kind':'file'}],'operation_class':'reversible_write','verification_mode':'semantic_review_required','risk_tags':['implementation_change'],'required_checks':['review']}]}; (run/'tasks.json').write_text(json.dumps(manifest))
             self.assertTrue(score('independent_modules',root)['critical']['parallel_candidates_recorded'])
             manifest['tasks'][1]['depends_on']=['names']; (run/'tasks.json').write_text(json.dumps(manifest))
+            self.assertFalse(score('independent_modules',root)['critical']['parallel_candidates_recorded'])
+            manifest['tasks'][1]['depends_on']=[]; original=copy.deepcopy(manifest['tasks']); manifest['tasks']=[{'task_id':'both',**{k:v for k,v in manifest['tasks'][0].items() if k!='task_id'},'write_scope':[{'path':'names.py','kind':'file'},{'path':'stats.py','kind':'file'}]}]; (run/'tasks.json').write_text(json.dumps(manifest))
+            self.assertFalse(score('independent_modules',root)['critical']['parallel_candidates_recorded'])
+            name,stats=original; bridge=copy.deepcopy(name); bridge.update(task_id='bridge',goal='bridge',depends_on=['names'],write_scope=[{'path':'bridge.txt','kind':'file'}]); stats['depends_on']=['bridge']; manifest['tasks']=[name,bridge,stats]; (run/'tasks.json').write_text(json.dumps(manifest))
+            self.assertFalse(score('independent_modules',root)['critical']['parallel_candidates_recorded'])
+            stats['depends_on']=[]; stats['write_scope'].append({'path':'shared','kind':'tree'}); name['write_scope'].append({'path':'shared/file.txt','kind':'file'}); (run/'tasks.json').write_text(json.dumps(manifest))
             self.assertFalse(score('independent_modules',root)['critical']['parallel_candidates_recorded'])
 
     def test_invalid_timeout_and_unobservable_budget_exit_nonzero(self):

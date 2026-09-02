@@ -19,7 +19,7 @@ The lead owns the plan, final answer, validation rules, and integration. Delegat
 
 Give each worker its objective, inputs, permitted paths and tools, required artifacts and checks, stop condition, and output location. For code changes, use isolated worktrees or branches. A branch name alone is not isolation.
 
-Treat delegation as started only after the spawn operation returns a concrete worker identity. Never wait without a known target, and never infer successful delegation or review from an attempted call. If spawning is unavailable or fails, attempt it only once: continue safe implementation in the lead when useful, record `resource_unavailable`, and leave independent semantic review outstanding. Do not claim reviewed completion until an identifiable reviewer actually returns evidence.
+Treat delegation as started only after the spawn operation returns a concrete worker identity. Never wait without a known target, and never infer successful delegation or review from an attempted call. If spawning is unavailable or fails, attempt it only once. Continue safe implementation in the lead when useful, but record the distinct reviewer task as `blocked` with `blocked_reason: resource_unavailable`; do not attach that reason to a completed or needs-revision implementation result. Leave lead integration incomplete until an identifiable reviewer actually returns evidence.
 
 Use a task manifest when a run has more than three tasks, delegated work, dependency ordering, parallel candidates, budgets, or approval-required operations. Read [the v0.2 contract](references/v0.2-contract.md) before creating or validating a manifest or result.
 

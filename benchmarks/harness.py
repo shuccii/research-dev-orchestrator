@@ -49,7 +49,7 @@ def summarize_events(events):
     usage = {k:0 for k in ('input_tokens','output_tokens','cached_input_tokens','reasoning_output_tokens')}
     present = set()
     counts = {'turn_count':0, 'tool_call_count':0, 'observed_subagent_events':0, 'observed_collaboration_events':0, 'observed_spawn_calls':0, 'observed_unbound_waits':0}
-    seen = set()
+    seen = set(); collaboration={}
     for event in events:
         if event.get('type') == 'turn.completed':
             counts['turn_count'] += 1
@@ -58,17 +58,18 @@ def summarize_events(events):
                     usage[key] += value
                     present.add(key)
         item = event.get('item',{})
-        if event.get('type') in ('item.started','item.completed') and item.get('id') is not None and item.get('id') not in seen:
+        if event.get('type') in ('item.started','item.completed') and item.get('id') is not None and item.get('type') in ('collab_agent_tool_call','collab_tool_call'):
+            record=collaboration.setdefault(item['id'],{'tools':set(),'bound':False})
+            if item.get('tool'): record['tools'].add(item['tool'])
+            record['bound'] |= bool(item.get('receiver_thread_ids') or item.get('agents_states'))
+        elif event.get('type') in ('item.started','item.completed') and item.get('id') is not None and item.get('id') not in seen:
             seen.add(item.get('id'))
             if item.get('type') in ('command_execution','mcp_tool_call','web_search'):
                 counts['tool_call_count'] += 1
-            if item.get('type') in ('collab_agent_tool_call','collab_tool_call'):
-                counts['observed_collaboration_events'] += 1
-                counts['tool_call_count'] += 1
-                if item.get('tool')=='wait' and not item.get('receiver_thread_ids') and not item.get('agents_states'): counts['observed_unbound_waits'] += 1
-                if item.get('tool') in ('spawn','spawn_agent'):
-                    counts['observed_spawn_calls'] += 1
-                    counts['observed_subagent_events'] += 1
+    for record in collaboration.values():
+        counts['observed_collaboration_events'] += 1; counts['tool_call_count'] += 1
+        if 'wait' in record['tools'] and not record['bound']: counts['observed_unbound_waits'] += 1
+        if record['tools'] & {'spawn','spawn_agent'}: counts['observed_spawn_calls'] += 1; counts['observed_subagent_events'] += 1
     return {**{k:(v if k in present else None) for k,v in usage.items()}, **counts, 'llm_call_count':None, 'review_count':None, 'subagent_count':None, 'model_observed':None, 'cost':None,
             'unavailable_reason':{'llm_call_count':'turns are not model requests','review_count':'CLI does not identify semantic reviewer roles','subagent_count':'coverage of nested agent telemetry unverified','model_observed':'requested model is not an observed model identity','cost':'no billing data exposed'}}
 

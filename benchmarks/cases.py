@@ -1,5 +1,10 @@
 """Public synthetic inputs and frozen independent scoring. Never copy grading to workers."""
-import json
+import json, sys
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'scripts'))
+from manifest_helper import detect_write_conflicts, validate_manifest
 
 CASES = {
     'format': {
@@ -64,10 +69,21 @@ def score(case_id, root):
                     try: manifests.append(json.loads(path.read_text()))
                     except (OSError,ValueError): pass
                 def has_independent_scopes(manifest):
+                    if validate_manifest(manifest): return False
                     tasks=manifest.get('tasks',[]) if isinstance(manifest,dict) else []
-                    name_task=next((t for t in tasks if any(s.get('path')=='names.py' for s in t.get('write_scope',[]))),None)
-                    stats_task=next((t for t in tasks if any(s.get('path')=='stats.py' for s in t.get('write_scope',[]))),None)
-                    return bool(name_task and stats_task and name_task['task_id'] not in stats_task.get('depends_on',[]) and stats_task['task_id'] not in name_task.get('depends_on',[]))
+                    name_task=next((t for t in tasks if any(s.get('path')=='names.py' and s.get('kind')=='file' for s in t.get('write_scope',[]))),None)
+                    stats_task=next((t for t in tasks if any(s.get('path')=='stats.py' and s.get('kind')=='file' for s in t.get('write_scope',[]))),None)
+                    if not name_task or not stats_task or name_task['task_id']==stats_task['task_id']: return False
+                    by_id={task['task_id']:task for task in tasks}
+                    def reaches(start,target):
+                        pending=list(by_id[start].get('depends_on',[])); seen=set()
+                        while pending:
+                            current=pending.pop()
+                            if current==target: return True
+                            if current not in seen and current in by_id: seen.add(current); pending.extend(by_id[current].get('depends_on',[]))
+                        return False
+                    target_ids={name_task['task_id'],stats_task['task_id']}
+                    return not reaches(name_task['task_id'],stats_task['task_id']) and not reaches(stats_task['task_id'],name_task['task_id']) and not detect_write_conflicts(tasks,target_ids)
                 checks['parallel_candidates_recorded'] = any(has_independent_scopes(manifest) for manifest in manifests)
             tests='\n'.join(path.read_text() for path in root.glob('**/test*.py') if 'selected-pack' not in path.parts)
             implementation='\n'.join((root/name).read_text() for name in names if (root/name).exists())

@@ -4,4 +4,4 @@ __pycache__/
 benchmarks/private.local.*
 runs/
 baseline/raw/
-benchmark-results/raw/
+benchmark-results/**/raw/

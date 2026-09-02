@@ -1,0 +1,22 @@
+{
+  "benchmark_session_id": "ca9d599c-54ee-442b-ab57-8b7cd724c290",
+  "model": "gpt-5.6-terra",
+  "effort": "high",
+  "timeout": 300,
+  "cases": [
+    "format"
+  ],
+  "created_at": "2026-09-02T17:13:58.573803Z",
+  "evaluator_sha256": "1cc38cbeba34867fc76ad6e4f27dbbc26ea403ec5d135ba4c05915f67ae7a866",
+  "case_sha256": {
+    "format": "76e55b75808bf45de3e2268ffb3c2fa0165cd6a5610412e0ae29e53851b93b76"
+  },
+  "holdout_case_sha256": {
+    "holdout_format": "12843751ff311750bd37b6bc27992920caacab2d751357351425656a3b200d87",
+    "holdout_research": "76100c79e3bc0b0f13aef55fbe3629b4042fec73d51312a921209953864b926f"
+  },
+  "pack_sha256": {
+    "v0.1.0": "635023b483cd95f1337ade4c70b5ae6400d1f93769977dac6c78377ec202c011",
+    "working": "c19d3c7d94ee5958df5611d391625a0ebda1eab1d51a95b76d05a8d66365ff22"
+  }
+}

@@ -17,3 +17,7 @@ The 176.28-second v0.2 formatting run created orchestration records and issued s
 ## Corrective changes
 
 The skill now explicitly completes small mechanical tasks in the lead without manifest, result-contract, worker, or reviewer overhead. The event adapter recognizes both observed collaboration event variants and reports observed spawn calls separately, while total subagent and reviewer counts remain unavailable. Formatting now has a host-observed zero-collaboration critical check. These changes require a new frozen evaluation session; earlier sessions are retained unchanged and cannot be promoted to release evidence.
+
+## Post-correction focused diagnostic
+
+`diagnostic-format-20260903` ran three fresh paired executions against the corrected direct path. All critical and noncritical items passed, both versions had zero observed collaboration and spawn calls, and the paired active-time ratios had a median of 0.2589. This scoped result validates the regression fix but cannot unlock holdout or release; a new full six-case primary comparison is still required.

@@ -48,7 +48,7 @@ def frozen_files(ref):
 def summarize_events(events):
     usage = {k:0 for k in ('input_tokens','output_tokens','cached_input_tokens','reasoning_output_tokens')}
     present = set()
-    counts = {'turn_count':0, 'tool_call_count':0, 'observed_subagent_events':0, 'observed_collaboration_events':0, 'observed_spawn_calls':0}
+    counts = {'turn_count':0, 'tool_call_count':0, 'observed_subagent_events':0, 'observed_collaboration_events':0, 'observed_spawn_calls':0, 'observed_unbound_waits':0}
     seen = set()
     for event in events:
         if event.get('type') == 'turn.completed':
@@ -65,6 +65,7 @@ def summarize_events(events):
             if item.get('type') in ('collab_agent_tool_call','collab_tool_call'):
                 counts['observed_collaboration_events'] += 1
                 counts['tool_call_count'] += 1
+                if item.get('tool')=='wait' and not item.get('receiver_thread_ids') and not item.get('agents_states'): counts['observed_unbound_waits'] += 1
                 if item.get('tool') in ('spawn','spawn_agent'):
                     counts['observed_spawn_calls'] += 1
                     counts['observed_subagent_events'] += 1
@@ -76,6 +77,9 @@ def score_observed_behavior(case_id, grade, telemetry):
     if case_id in ('format','holdout_format'):
         grade['critical']['no_collaboration_calls']=telemetry['observed_collaboration_events']==0
         grade['critical_pass']=grade['critical_pass'] and grade['critical']['no_collaboration_calls']
+    if case_id=='independent_modules':
+        grade['critical']['no_unbound_collaboration_waits']=telemetry['observed_unbound_waits']==0
+        grade['critical_pass']=grade['critical_pass'] and grade['critical']['no_unbound_collaboration_waits']
     return grade
 
 

@@ -58,6 +58,17 @@ def score(case_id, root):
             names=('names.py','stats.py') if case_id=='independent_modules' else ('average.py',)
             checks['implementation_present'] = all((root/name).exists() and len((root/name).read_text().strip())>=20 for name in names)
             checks['regression_test_present'] = any(root.glob('**/test*.py'))
+            if case_id=='independent_modules':
+                manifests=[]
+                for path in root.glob('**/tasks.json'):
+                    try: manifests.append(json.loads(path.read_text()))
+                    except (OSError,ValueError): pass
+                def has_independent_scopes(manifest):
+                    tasks=manifest.get('tasks',[]) if isinstance(manifest,dict) else []
+                    name_task=next((t for t in tasks if any(s.get('path')=='names.py' for s in t.get('write_scope',[]))),None)
+                    stats_task=next((t for t in tasks if any(s.get('path')=='stats.py' for s in t.get('write_scope',[]))),None)
+                    return bool(name_task and stats_task and name_task['task_id'] not in stats_task.get('depends_on',[]) and stats_task['task_id'] not in name_task.get('depends_on',[]))
+                checks['parallel_candidates_recorded'] = any(has_independent_scopes(manifest) for manifest in manifests)
             tests='\n'.join(path.read_text() for path in root.glob('**/test*.py') if 'selected-pack' not in path.parts)
             implementation='\n'.join((root/name).read_text() for name in names if (root/name).exists())
             if case_id=='independent_modules':

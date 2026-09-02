@@ -1,0 +1,32 @@
+{
+  "benchmark_session_id": "78b5a944-6ab5-45b8-9540-a444054c0543",
+  "model": "gpt-5.6-terra",
+  "effort": "high",
+  "timeout": 300,
+  "cases": [
+    "format",
+    "independent_modules",
+    "bugfix",
+    "sources",
+    "research_defects",
+    "job_defects"
+  ],
+  "created_at": "2026-09-02T17:18:13.904724Z",
+  "evaluator_sha256": "1cc38cbeba34867fc76ad6e4f27dbbc26ea403ec5d135ba4c05915f67ae7a866",
+  "case_sha256": {
+    "format": "76e55b75808bf45de3e2268ffb3c2fa0165cd6a5610412e0ae29e53851b93b76",
+    "independent_modules": "47b5fffdbc9b25fc2293de8051d712166a604022d8ef1651f3291cbd93f324a6",
+    "bugfix": "d82eff20378287528be15879775217446aadad844542217c74f06f74bb64947c",
+    "sources": "dfc78aa9ad2f6972651c2055bb18adc9394b1a9205170cbdd7cd9b0e9db879e7",
+    "research_defects": "889bd69043bb06af89f6f3a3ba4627585702893ac658cc5627cd3cc6cc33beda",
+    "job_defects": "eecf401bbc9d43abbcb511d705f8400603826d55bc176965593ea1bdd5562ce3"
+  },
+  "holdout_case_sha256": {
+    "holdout_format": "12843751ff311750bd37b6bc27992920caacab2d751357351425656a3b200d87",
+    "holdout_research": "76100c79e3bc0b0f13aef55fbe3629b4042fec73d51312a921209953864b926f"
+  },
+  "pack_sha256": {
+    "v0.1.0": "635023b483cd95f1337ade4c70b5ae6400d1f93769977dac6c78377ec202c011",
+    "working": "c19d3c7d94ee5958df5611d391625a0ebda1eab1d51a95b76d05a8d66365ff22"
+  }
+}

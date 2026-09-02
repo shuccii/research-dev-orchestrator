@@ -22,8 +22,14 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(telemetry['observed_collaboration_events'],2)
         self.assertEqual(telemetry['observed_spawn_calls'],1)
         self.assertEqual(telemetry['observed_subagent_events'],1)
+        self.assertEqual(telemetry['observed_unbound_waits'],1)
         self.assertIsNone(telemetry['subagent_count'])
         grade=score_observed_behavior('format',{'critical':{'values':True},'critical_pass':True},telemetry)
+        self.assertFalse(grade['critical_pass'])
+
+    def test_unbound_wait_fails_independent_modules(self):
+        telemetry=summarize_events([{'type':'item.started','item':{'id':'wait-1','type':'collab_tool_call','tool':'wait','receiver_thread_ids':[]}}])
+        grade=score_observed_behavior('independent_modules',{'critical':{'artifacts':True},'critical_pass':True},telemetry)
         self.assertFalse(grade['critical_pass'])
 
     def test_compare_pass_and_session_isolation(self):
@@ -76,6 +82,14 @@ class HarnessTests(unittest.TestCase):
             root=Path(directory); (root/'input.json').write_text('{"a": 1}\n'); (root/'formatted.json').write_text('{\n  "a": 1\n}')
             first=score('format',root); self.assertEqual(first['noncritical'],{'terminal_newline':False})
             (root/'formatted.json').write_text('{\n  "a": 1\n}\n'); self.assertGreater(score('format',root)['noncritical_score'],first['noncritical_score'])
+
+    def test_parallel_candidate_contract_is_graded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); (root/'names.py').write_text('def slug(value): return value\n'); (root/'stats.py').write_text('def median(value): return value\n'); (root/'test_modules.py').write_text('def test_slug_and_median(): pass\n')
+            run=root/'runs'; run.mkdir(); manifest={'tasks':[{'task_id':'names','depends_on':[],'write_scope':[{'path':'names.py'}]},{'task_id':'stats','depends_on':[],'write_scope':[{'path':'stats.py'}]}]}; (run/'tasks.json').write_text(json.dumps(manifest))
+            self.assertTrue(score('independent_modules',root)['critical']['parallel_candidates_recorded'])
+            manifest['tasks'][1]['depends_on']=['names']; (run/'tasks.json').write_text(json.dumps(manifest))
+            self.assertFalse(score('independent_modules',root)['critical']['parallel_candidates_recorded'])
 
     def test_invalid_timeout_and_unobservable_budget_exit_nonzero(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -21,3 +21,9 @@ The skill now explicitly completes small mechanical tasks in the lead without ma
 ## Post-correction focused diagnostic
 
 `diagnostic-format-20260903` ran three fresh paired executions against the corrected direct path. All critical and noncritical items passed, both versions had zero observed collaboration and spawn calls, and the paired active-time ratios had a median of 0.2589. This scoped result validates the regression fix but cannot unlock holdout or release; a new full six-case primary comparison is still required.
+
+## First post-correction full attempt
+
+`primary-postfix-20260903` reproduced the formatting improvement, then produced three consecutive 300-second timeouts for the v0.2 independent-module run. The outputs passed the artifact-only checks but did not yield a completed turn, so all three rows are invalid measurements and the session is blocked as `external_dependency`. Retained events show repeated waits without a concrete receiver plus prose assertions of worker/reviewer activity. The candidate therefore failed evidence integrity as well as measurement sufficiency.
+
+The subsequent correction requires a concrete spawned identity before waiting, allows one failed spawn attempt before direct fallback, leaves independent review explicitly outstanding, records independent write scopes as a critical manifest criterion, and makes unbound waits a critical failure. Another frozen session is required to test this behavior.

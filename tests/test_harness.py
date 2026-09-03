@@ -55,6 +55,10 @@ class HarnessTests(unittest.TestCase):
             manifest={'schema_version':'0.2.0','run_id':'run-1','budget':{'max_wall_clock_seconds':300,'max_retries':1},'tasks':tasks}; (root/'tasks.json').write_text(json.dumps(manifest))
             self.assertFalse(score_review_completion(root,grade(),{'observed_agent_ids':[]})['critical_pass'])
             self.assertTrue(score_review_completion(root,grade(),{'observed_agent_ids':['reviewer-1']})['critical_pass'])
+            (root/'tasks.json').unlink()
+            for task in tasks:
+                split=copy.deepcopy(manifest); split['tasks']=[task]; (root/task['task_id']/'tasks.json').write_text(json.dumps(split))
+            self.assertFalse(score_review_completion(root,grade(),{'observed_agent_ids':['reviewer-1']})['critical_pass'])
 
     def test_compare_pass_and_session_isolation(self):
         rows=[]

@@ -19,8 +19,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 
-from cases import CASES, HOLDOUT, score
-from manifest_helper import validate_manifest
+from cases import CASES, HOLDOUT, independent_module_tasks, score
 from validate_task_result import check_one
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,23 +91,25 @@ def score_observed_behavior(case_id, grade, telemetry):
 def score_review_completion(root, grade, telemetry):
     """Require v0.2 semantic contracts plus externally observed reviewer identity."""
     schema=json.loads((ROOT/'assets/task-result.schema.json').read_text())
-    reviewed_scopes=set(); observed=set(telemetry['observed_agent_ids'])
+    observed=set(telemetry['observed_agent_ids']); passed=False
     for manifest_path in root.glob('**/tasks.json'):
         try:
             manifest=json.loads(manifest_path.read_text())
-            if validate_manifest(manifest): continue
+            targets=independent_module_tasks(manifest)
+            if not targets: continue
             tasks={task['task_id']:task for task in manifest['tasks']}
-            for result_path in root.glob('**/result.json'):
+            target_ids={task['task_id'] for task in targets}; reviewed=set()
+            for result_path in manifest_path.parent.rglob('result.json'):
+                owner=next((parent/'tasks.json' for parent in (result_path.parent,*result_path.parents) if (parent/'tasks.json').exists()),None)
+                if owner!=manifest_path: continue
                 data=json.loads(result_path.read_text())
-                if not isinstance(data,dict) or data.get('task_id') not in tasks: continue
+                if not isinstance(data,dict) or data.get('task_id') not in target_ids: continue
                 task=tasks[data['task_id']]
-                if task['verification_mode']!='semantic_review_required': continue
                 verdict=check_one(result_path,schema,manifest,False)
                 reviewer=data.get('verification',{}).get('validity_review',{}).get('reviewer_id')
-                if verdict['completion_eligible'] and reviewer in observed:
-                    reviewed_scopes.update(scope['path'] for scope in task['write_scope'] if scope['kind']=='file')
+                if verdict['completion_eligible'] and reviewer in observed: reviewed.add(task['task_id'])
+            if reviewed==target_ids: passed=True; break
         except (OSError,ValueError,TypeError,KeyError): continue
-    passed={'names.py','stats.py'} <= reviewed_scopes
     grade['critical']['independent_review_completed']=passed
     grade['critical_pass']=grade['critical_pass'] and passed
     return grade

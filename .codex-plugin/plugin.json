@@ -1,6 +1,6 @@
 {
   "name": "research-dev-orchestrator",
-  "version": "0.2.0+codex.20260903060120",
+  "version": "0.2.0+codex.20260903060519",
   "description": "Safe, evidence-backed orchestration for research, software delivery, and job-search work.",
   "author": {
     "name": "Local developer"
@@ -13,6 +13,6 @@
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Use the appropriate Research Dev Orchestrator workflow to plan and execute this request with evidence, review gates, and approval boundaries."
+    "defaultPrompt": "Use Research Dev Orchestrator with evidence, review gates, and explicit approval boundaries."
   }
 }

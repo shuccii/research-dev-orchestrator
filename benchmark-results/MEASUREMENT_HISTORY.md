@@ -31,3 +31,5 @@ The subsequent correction requires a concrete spawned identity before waiting, a
 `diagnostic-independent-20260903` did not test that correction: the Codex usage limit interrupted the initial v0.1 run and both replacements, so it is retained only as another `external_dependency` record. The limit later reset without redeeming the available reset credit.
 
 Before another attempt, the conformance gate was tightened further: v0.2 needs integration-eligible semantic-review results for both implementation scopes, with reviewer identity bound to an agent identifier observed by the host. A fast direct fallback with review still outstanding cannot pass the release rubric.
+
+`smoke-independent-v02c-20260903` then completed in 265.44 seconds. Implementation, tests, the independent write-scope manifest, and noncritical checks passed. The CLI stream exposed zero collaboration events, zero spawn calls, and no agent IDs, so `independent_review_completed` correctly failed. The run used 521,378 input tokens and 12,780 output tokens. It is decisive quality evidence against release in the current CLI environment, but it is not a paired performance result.

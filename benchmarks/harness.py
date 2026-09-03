@@ -20,6 +20,8 @@ import uuid
 from datetime import datetime, timezone
 
 from cases import CASES, HOLDOUT, score
+from manifest_helper import validate_manifest
+from validate_task_result import check_one
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,13 +35,14 @@ def digest(value):
 
 
 def evaluator_digest():
-    value={name:(ROOT/'benchmarks'/name).read_text() for name in ('harness.py','cases.py','PROTOCOL.md')}
+    paths=['benchmarks/harness.py','benchmarks/cases.py','benchmarks/PROTOCOL.md','scripts/manifest_helper.py','scripts/schema_subset.py','scripts/validate_task_result.py','assets/task-manifest.schema.json','assets/task-result.schema.json','assets/verification-policy.json']
+    value={name:(ROOT/name).read_text() for name in paths}
     return digest(value)
 
 
 def frozen_files(ref):
     if ref == 'working':
-        paths = ['.codex-plugin/plugin.json'] + [str(p.relative_to(ROOT)) for folder in ('skills','scripts','assets') for p in (ROOT/folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc']
+        paths = ['.codex-plugin/plugin.json'] + [str(p.relative_to(ROOT)) for folder in ('skills','scripts','assets') for p in (ROOT/folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc' and p.name!='.DS_Store']
         return {p:(ROOT/p).read_text() for p in paths}
     paths = subprocess.check_output(['git','ls-tree','-r','--name-only',ref],cwd=ROOT,text=True).splitlines()
     return {p:subprocess.check_output(['git','show',f'{ref}:{p}'],cwd=ROOT,text=True) for p in paths if p.startswith(('skills/','scripts/','assets/','.codex-plugin/'))}
@@ -49,7 +52,7 @@ def summarize_events(events):
     usage = {k:0 for k in ('input_tokens','output_tokens','cached_input_tokens','reasoning_output_tokens')}
     present = set()
     counts = {'turn_count':0, 'tool_call_count':0, 'observed_subagent_events':0, 'observed_collaboration_events':0, 'observed_spawn_calls':0, 'observed_unbound_waits':0}
-    seen = set(); collaboration={}
+    seen = set(); collaboration={}; observed_agents=set()
     for event in events:
         if event.get('type') == 'turn.completed':
             counts['turn_count'] += 1
@@ -62,6 +65,8 @@ def summarize_events(events):
             record=collaboration.setdefault(item['id'],{'tools':set(),'bound':False})
             if item.get('tool'): record['tools'].add(item['tool'])
             record['bound'] |= bool(item.get('receiver_thread_ids') or item.get('agents_states'))
+            observed_agents.update(value for value in (item.get('receiver_thread_ids') or []) if isinstance(value,str))
+            observed_agents.update(value for value in (item.get('agents_states') or {}) if isinstance(value,str))
         elif event.get('type') in ('item.started','item.completed') and item.get('id') is not None and item.get('id') not in seen:
             seen.add(item.get('id'))
             if item.get('type') in ('command_execution','mcp_tool_call','web_search'):
@@ -70,7 +75,7 @@ def summarize_events(events):
         counts['observed_collaboration_events'] += 1; counts['tool_call_count'] += 1
         if 'wait' in record['tools'] and not record['bound']: counts['observed_unbound_waits'] += 1
         if record['tools'] & {'spawn','spawn_agent'}: counts['observed_spawn_calls'] += 1; counts['observed_subagent_events'] += 1
-    return {**{k:(v if k in present else None) for k,v in usage.items()}, **counts, 'llm_call_count':None, 'review_count':None, 'subagent_count':None, 'model_observed':None, 'cost':None,
+    return {**{k:(v if k in present else None) for k,v in usage.items()}, **counts, 'observed_agent_ids':sorted(observed_agents), 'llm_call_count':None, 'review_count':None, 'subagent_count':None, 'model_observed':None, 'cost':None,
             'unavailable_reason':{'llm_call_count':'turns are not model requests','review_count':'CLI does not identify semantic reviewer roles','subagent_count':'coverage of nested agent telemetry unverified','model_observed':'requested model is not an observed model identity','cost':'no billing data exposed'}}
 
 
@@ -81,6 +86,31 @@ def score_observed_behavior(case_id, grade, telemetry):
     if case_id=='independent_modules':
         grade['critical']['no_unbound_collaboration_waits']=telemetry['observed_unbound_waits']==0
         grade['critical_pass']=grade['critical_pass'] and grade['critical']['no_unbound_collaboration_waits']
+    return grade
+
+
+def score_review_completion(root, grade, telemetry):
+    """Require v0.2 semantic contracts plus externally observed reviewer identity."""
+    schema=json.loads((ROOT/'assets/task-result.schema.json').read_text())
+    reviewed_scopes=set(); observed=set(telemetry['observed_agent_ids'])
+    for manifest_path in root.glob('**/tasks.json'):
+        try:
+            manifest=json.loads(manifest_path.read_text())
+            if validate_manifest(manifest): continue
+            tasks={task['task_id']:task for task in manifest['tasks']}
+            for result_path in root.glob('**/result.json'):
+                data=json.loads(result_path.read_text())
+                if not isinstance(data,dict) or data.get('task_id') not in tasks: continue
+                task=tasks[data['task_id']]
+                if task['verification_mode']!='semantic_review_required': continue
+                verdict=check_one(result_path,schema,manifest,False)
+                reviewer=data.get('verification',{}).get('validity_review',{}).get('reviewer_id')
+                if verdict['completion_eligible'] and reviewer in observed:
+                    reviewed_scopes.update(scope['path'] for scope in task['write_scope'] if scope['kind']=='file')
+        except (OSError,ValueError,TypeError,KeyError): continue
+    passed={'names.py','stats.py'} <= reviewed_scopes
+    grade['critical']['independent_review_completed']=passed
+    grade['critical_pass']=grade['critical_pass'] and passed
     return grade
 
 
@@ -149,6 +179,8 @@ def run_case(case_id, ref, output, model, effort, timeout, phase, pair, session_
         grade = score(case_id,work) if not unsafe_links else {'critical':{},'critical_pass':False,'noncritical_score':0,'findings':[],'semantic_adjudication':'pending','error':f'workspace contains symlink(s): {unsafe_links}'}
         telemetry=summarize_events(events)
         grade=score_observed_behavior(case_id,grade,telemetry)
+        if ref=='working' and case_id=='independent_modules' and not unsafe_links:
+            grade=score_review_completion(work,grade,telemetry)
         # Only selected outputs, never the real home/config, are retained.
         import shutil
         shutil.copytree(work,raw/'workspace',symlinks=True,ignore=shutil.ignore_patterns('selected-pack','__pycache__'))

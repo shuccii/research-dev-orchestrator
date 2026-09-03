@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'benchmarks'))
 from cases import score
-from harness import compare, digest, evaluate_holdout, evaluator_digest, validate_adjudications, summarize_events, score_observed_behavior
+from harness import compare, digest, evaluate_holdout, evaluator_digest, validate_adjudications, summarize_events, score_observed_behavior, score_review_completion, frozen_files
 
 
 def row(case,version,pair,session='session-1',seconds=10.0):
@@ -16,6 +16,9 @@ def config(cases):
 
 
 class HarnessTests(unittest.TestCase):
+    def test_frozen_pack_ignores_os_metadata(self):
+        self.assertFalse(any(path.endswith('.DS_Store') for path in frozen_files('working')))
+
     def test_real_cli_collaboration_events_are_counted_and_disallowed_for_format(self):
         events=[{'type':'item.started','item':{'id':'1','type':'collab_tool_call','tool':'wait','receiver_thread_ids':[]}}, {'type':'item.completed','item':{'id':'1','type':'collab_tool_call','tool':'wait','receiver_thread_ids':[]}}, {'type':'item.completed','item':{'id':'2','type':'collab_agent_tool_call','tool':'spawn_agent','status':'failed'}}]
         telemetry=summarize_events(events)
@@ -36,6 +39,22 @@ class HarnessTests(unittest.TestCase):
         events=[{'type':'item.started','item':{'id':'wait-1','type':'collab_tool_call','tool':'wait'}},{'type':'item.completed','item':{'id':'wait-1','type':'collab_tool_call','tool':'wait','receiver_thread_ids':['worker-1']}}]
         telemetry=summarize_events(events)
         self.assertEqual(telemetry['observed_collaboration_events'],1); self.assertEqual(telemetry['observed_unbound_waits'],0)
+        self.assertEqual(telemetry['observed_agent_ids'],['worker-1'])
+
+    def test_review_completion_requires_contracts_and_observed_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); grade=lambda: {'critical':{'artifacts':True},'critical_pass':True}
+            self.assertFalse(score_review_completion(root,grade(),{'observed_agent_ids':[]})['critical_pass'])
+            tasks=[]
+            for name in ('names','stats'):
+                tasks.append({'task_id':name,'parent_task_id':None,'goal':name,'depends_on':[],'write_scope':[{'path':name+'.py','kind':'file'}],'operation_class':'reversible_write','verification_mode':'semantic_review_required','risk_tags':['implementation_change'],'required_checks':['review']})
+                folder=root/name; folder.mkdir(); (folder/'out.json').write_text('{}')
+                result=json.loads((ROOT/'tests/fixtures/result.completed.valid.json').read_text()); result.update(task_id=name,worker_id='worker-'+name)
+                result['verification']={'required_checks':['review'],'checks':[{'check_id':'review','type':'semantic_review','result':'passed','observed_by':'reviewer','observer_id':'reviewer-1','evidence_refs':['out.json']}],'validity_review':{'required':True,'status':'passed','reviewer_id':'reviewer-1'}}
+                (folder/'result.json').write_text(json.dumps(result))
+            manifest={'schema_version':'0.2.0','run_id':'run-1','budget':{'max_wall_clock_seconds':300,'max_retries':1},'tasks':tasks}; (root/'tasks.json').write_text(json.dumps(manifest))
+            self.assertFalse(score_review_completion(root,grade(),{'observed_agent_ids':[]})['critical_pass'])
+            self.assertTrue(score_review_completion(root,grade(),{'observed_agent_ids':['reviewer-1']})['critical_pass'])
 
     def test_compare_pass_and_session_isolation(self):
         rows=[]

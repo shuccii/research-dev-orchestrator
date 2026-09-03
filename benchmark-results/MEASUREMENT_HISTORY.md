@@ -27,3 +27,7 @@ The skill now explicitly completes small mechanical tasks in the lead without ma
 `primary-postfix-20260903` reproduced the formatting improvement, then produced three consecutive 300-second timeouts for the v0.2 independent-module run. The outputs passed the artifact-only checks but did not yield a completed turn, so all three rows are invalid measurements and the session is blocked as `external_dependency`. Retained events show repeated waits without a concrete receiver plus prose assertions of worker/reviewer activity. The candidate therefore failed evidence integrity as well as measurement sufficiency.
 
 The subsequent correction requires a concrete spawned identity before waiting, allows one failed spawn attempt before direct fallback, leaves independent review explicitly outstanding, records independent write scopes as a critical manifest criterion, and makes unbound waits a critical failure. Another frozen session is required to test this behavior.
+
+`diagnostic-independent-20260903` did not test that correction: the Codex usage limit interrupted the initial v0.1 run and both replacements, so it is retained only as another `external_dependency` record. The limit later reset without redeeming the available reset credit.
+
+Before another attempt, the conformance gate was tightened further: v0.2 needs integration-eligible semantic-review results for both implementation scopes, with reviewer identity bound to an agent identifier observed by the host. A fast direct fallback with review still outstanding cannot pass the release rubric.

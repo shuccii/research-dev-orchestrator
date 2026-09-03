@@ -49,9 +49,8 @@ HOLDOUT = {
 def independent_module_tasks(manifest):
     if validate_manifest(manifest): return None
     tasks=manifest.get('tasks',[]) if isinstance(manifest,dict) else []
-    name_task=next((t for t in tasks if any(s.get('path')=='names.py' and s.get('kind')=='file' for s in t.get('write_scope',[]))),None)
-    stats_task=next((t for t in tasks if any(s.get('path')=='stats.py' and s.get('kind')=='file' for s in t.get('write_scope',[]))),None)
-    if not name_task or not stats_task or name_task['task_id']==stats_task['task_id']: return None
+    name_tasks=[t for t in tasks if any(s.get('path')=='names.py' and s.get('kind')=='file' for s in t.get('write_scope',[]))]
+    stats_tasks=[t for t in tasks if any(s.get('path')=='stats.py' and s.get('kind')=='file' for s in t.get('write_scope',[]))]
     by_id={task['task_id']:task for task in tasks}
     def reaches(start,target):
         pending=list(by_id[start].get('depends_on',[])); seen=set()
@@ -60,9 +59,13 @@ def independent_module_tasks(manifest):
             if current==target: return True
             if current not in seen and current in by_id: seen.add(current); pending.extend(by_id[current].get('depends_on',[]))
         return False
-    target_ids={name_task['task_id'],stats_task['task_id']}
-    if reaches(name_task['task_id'],stats_task['task_id']) or reaches(stats_task['task_id'],name_task['task_id']) or detect_write_conflicts(tasks,target_ids): return None
-    return name_task,stats_task
+    for name_task in name_tasks:
+        for stats_task in stats_tasks:
+            if name_task['task_id']==stats_task['task_id']: continue
+            target_ids={name_task['task_id'],stats_task['task_id']}
+            if not reaches(name_task['task_id'],stats_task['task_id']) and not reaches(stats_task['task_id'],name_task['task_id']) and not detect_write_conflicts(tasks,target_ids):
+                return name_task,stats_task
+    return None
 
 
 def score(case_id, root):

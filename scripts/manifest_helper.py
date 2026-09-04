@@ -6,6 +6,7 @@ from schema_subset import audit_schema, validate
 
 ROOT=Path(__file__).resolve().parents[1]
 SEMANTIC_RISKS={'research_conclusion','external_fact','statistical_design','data_leakage','security_sensitive','job_claim','implementation_change'}
+RESEARCH_RISKS={'research_conclusion','statistical_design','data_leakage'}
 
 def load_manifest(path):
     return json.loads(Path(path).read_text())
@@ -71,6 +72,16 @@ def validate_manifest(manifest):
     errors=_schema_errors(manifest)
     if errors: return errors
     tasks=manifest['tasks']; ids=[task['task_id'] for task in tasks]; known=set(ids)
+    contract=manifest['research_contract']
+    if manifest['assurance_profile']=='research_strict':
+        if not isinstance(contract,str) or not contract: errors.append('$.research_contract: research_strict requires a contract path')
+        else:
+            try: _clean_scope({'path':contract,'kind':'file'})
+            except ValueError as exc: errors.append(f'$.research_contract: {exc}')
+        if not any(set(task['risk_tags']) & RESEARCH_RISKS for task in tasks): errors.append('$.tasks: research_strict requires a research risk tag')
+    else:
+        if contract is not None: errors.append('$.research_contract: standard profile must use null')
+        if any(set(task['risk_tags']) & RESEARCH_RISKS for task in tasks): errors.append('$.assurance_profile: research risk tags require research_strict')
     if len(ids)!=len(known): errors.append('$.tasks: duplicate task_id')
     for task in tasks:
         for dep in task['depends_on']:

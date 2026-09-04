@@ -21,7 +21,7 @@ Give each worker its objective, inputs, permitted paths and tools, required arti
 
 Treat delegation as started only after the spawn operation returns a concrete worker identity. Preserve that returned identity verbatim in worker/reviewer result fields. Never wait without a known target, and never infer successful delegation or review from an attempted call. If spawning is unavailable or fails, attempt it only once. Continue safe implementation in the lead when useful, but record the distinct reviewer task as `blocked` with `blocked_reason: resource_unavailable`; do not attach that reason to a completed or needs-revision implementation result. Leave lead integration incomplete until an identifiable reviewer actually returns evidence.
 
-Use a task manifest when a run has more than three tasks, delegated work, dependency ordering, parallel candidates, budgets, or approval-required operations. Read [the v0.2 contract](references/v0.2-contract.md) before creating or validating a manifest or result.
+Use a task manifest when a run has more than three tasks, delegated work, dependency ordering, parallel candidates, budgets, approval-required operations, or strict research. Read [the v0.3 contract](references/v0.3-contract.md) before creating or validating a manifest or result.
 
 ## Validate and integrate
 
@@ -32,6 +32,8 @@ Keep execution success separate from scientific, technical, or factual validity.
 Give reviewers the run and task contracts, relevant diff, artifact and evidence indexes, and references needed for semantic judgment. Let them retrieve additional source material when required.
 
 Integrate only results that pass the required checks and review. Report actual artifacts and checks, unresolved limitations, unavailable metrics, and approval-required next actions.
+
+Select `research_strict` automatically for scientific research, statistical inference, machine-learning model construction or evaluation, scientific conclusions, research optimization, and research reporting. Routine business aggregation, log inspection, file transformation, ordinary software, and job-search work stay on `standard` unless the user explicitly requests research-grade assurance. Strict research always uses a manifest and research contract; it never takes the direct path.
 
 ## Approval and budget boundaries
 

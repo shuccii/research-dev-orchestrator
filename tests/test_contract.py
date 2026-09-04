@@ -69,9 +69,44 @@ class ContractTests(unittest.TestCase):
         data=load('result.legacy.json'); self.assertNotEqual(run_result(data,manifest=False).returncode,0)
         p=run_result(data,manifest=False,legacy=True); self.assertEqual(p.returncode,0); self.assertFalse(json.loads(p.stdout)['results'][0]['completion_eligible'])
         self.assertNotEqual(run_result({},manifest=False,legacy=True).returncode,0)
+        old=copy.deepcopy(self.valid); old['schema_version']='0.2.0'
+        p=run_result(old,manifest=False,legacy=True); self.assertEqual(p.returncode,0); self.assertFalse(json.loads(p.stdout)['results'][0]['completion_eligible'])
     def test_completed_without_manifest_not_eligible(self): self.assertNotEqual(run_result(self.valid,manifest=False).returncode,0)
     def test_unknown_schema_keyword_fails_closed(self):
         with self.assertRaises(ValueError): audit_schema({'type':'string','maxLength':2})
+    def test_strict_research_result_requires_traceable_validity(self):
+        manifest={
+            'schema_version':'0.3.0','run_id':'research-run','assurance_profile':'research_strict','research_contract':'research-contract.json',
+            'budget':{'max_wall_clock_seconds':300,'max_retries':1},
+            'tasks':[{'task_id':'analysis','parent_task_id':None,'goal':'Validate research','depends_on':[],'write_scope':[{'path':'out.json','kind':'file'}],'operation_class':'reversible_write','verification_mode':'semantic_review_required','risk_tags':['statistical_design','data_leakage'],'required_checks':['review']}]
+        }
+        result=copy.deepcopy(self.valid); result.update(run_id='research-run',task_id='analysis',worker_id='worker-1')
+        result['verification']={'required_checks':['review'],'checks':[{'check_id':'review','type':'semantic_review','result':'passed','observed_by':'reviewer','observer_id':'reviewer-1','evidence_refs':['out.json']}],'validity_review':{'required':True,'status':'passed','reviewer_id':'reviewer-1'}}
+        contract=json.loads((FIX/'research-contract.valid.json').read_text())
+        contract_refs={contract['evaluation']['raw_predictions_artifact'],contract['data_quality']['missingness_artifact'],contract['data_quality']['physical_constraints_artifact'],contract['data_quality']['category_normalization_artifact'],contract['reproduction']['split_artifact'],contract['reproduction']['environment_artifact'],contract['reproduction']['command_artifact']} | {ref for gate in contract['validation_gates'] for ref in gate['evidence_refs']}
+        result['evidence']=sorted({'out.json'}|contract_refs); result['artifacts']=['out.json','bundle.json']
+        result.update(research_validation=[{'gate_id':gate['gate_id'],'status':gate['status'],'reason':gate['reason'],'evidence_refs':['out.json']} for gate in contract['validation_gates']],claim_evidence_map=[{'claim_id':'conclusion','claim':'Predictive performance was evaluated without leakage.','status':'supported','evidence_refs':['out.json']}],invalidated_artifacts=[],reproduction_bundle='bundle.json',review_scope=['design','data','execution','numerical_results','interpretation','claims','reproducibility'],review_findings=[])
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); (root/'out.json').write_text('{}'); (root/'bundle.json').write_text('{}'); (root/'manifest.json').write_text(json.dumps(manifest)); (root/'research-contract.json').write_text(json.dumps(contract)); (root/'result.json').write_text(json.dumps(result))
+            refs=[contract['evaluation']['raw_predictions_artifact'],contract['data_quality']['missingness_artifact'],contract['data_quality']['physical_constraints_artifact'],contract['data_quality']['category_normalization_artifact']]
+            refs += [contract['reproduction'][key] for key in ('split_artifact','environment_artifact','command_artifact')]
+            refs += [ref for gate in contract['validation_gates'] for ref in gate['evidence_refs']]
+            for ref in set(refs): (root/ref).write_text('{}')
+            cmd=[sys.executable,str(SCRIPTS/'validate_task_result.py'),'--json','--manifest',str(root/'manifest.json'),str(root/'result.json')]
+            passed=subprocess.run(cmd,capture_output=True,text=True); self.assertEqual(passed.returncode,0,passed.stdout+passed.stderr)
+            revision=copy.deepcopy(result); revision['status']='needs_revision'; (root/'result.json').write_text(json.dumps(revision))
+            reviewed_revision=subprocess.run(cmd,capture_output=True,text=True); self.assertEqual(reviewed_revision.returncode,0,reviewed_revision.stdout+reviewed_revision.stderr)
+            no_worker=copy.deepcopy(result); no_worker.pop('worker_id'); (root/'result.json').write_text(json.dumps(no_worker))
+            failed=subprocess.run(cmd,capture_output=True,text=True); self.assertNotEqual(failed.returncode,0); self.assertIn('worker_id',failed.stdout)
+            result['claim_evidence_map'][0]['status']='invalidated'; (root/'result.json').write_text(json.dumps(result))
+            failed=subprocess.run(cmd,capture_output=True,text=True); self.assertNotEqual(failed.returncode,0); self.assertIn('invalidated claims',failed.stdout)
+            blocked=copy.deepcopy(result); blocked.update(status='blocked',blocked_reason='resource_unavailable',artifacts=[],evidence=['out.json'])
+            for field in ('research_validation','claim_evidence_map','invalidated_artifacts','reproduction_bundle','review_scope','review_findings'): blocked.pop(field)
+            blocked.pop('worker_id',None); blocked['verification']['validity_review']={'required':False,'status':'not_run','reviewer_id':None}; (root/'result.json').write_text(json.dumps(blocked))
+            partial=subprocess.run(cmd,capture_output=True,text=True); self.assertEqual(partial.returncode,0,partial.stdout+partial.stderr)
+            (root/'research-contract.json').unlink()
+            for ref in contract_refs: (root/ref).unlink(missing_ok=True)
+            blocked_before_execution=subprocess.run(cmd,capture_output=True,text=True); self.assertEqual(blocked_before_execution.returncode,0,blocked_before_execution.stdout+blocked_before_execution.stderr)
 
 class ManifestTests(unittest.TestCase):
     def setUp(self): self.valid=load('manifest.valid.json')
@@ -94,5 +129,13 @@ class ManifestTests(unittest.TestCase):
     def test_approval_alone_does_not_release_dependent(self):
         d=copy.deepcopy(self.valid); d['tasks'][0].update(operation_class='approval_required',verification_mode='semantic_review_required',required_checks=['operation_success']); d['tasks'][1]['depends_on']=['format']
         self.assertEqual(validate_manifest(d),[]); self.assertEqual(ready_tasks(d,{'format'}),[]); self.assertEqual(ready_tasks(d,{'format'},{'format'}),['review'])
+    def test_standard_profile_rejects_research_contract(self):
+        d=copy.deepcopy(self.valid); d['research_contract']='runs/research.json'; self.assertTrue(validate_manifest(d))
+    def test_research_strict_requires_contract_and_research_risk(self):
+        d=copy.deepcopy(self.valid); d['assurance_profile']='research_strict'; self.assertTrue(validate_manifest(d))
+        d['research_contract']='runs/research.json'; d['tasks'][1]['risk_tags']=['statistical_design']; self.assertEqual(validate_manifest(d),[])
+    def test_research_risk_cannot_use_standard_profile(self):
+        d=copy.deepcopy(self.valid); d['tasks'][1]['risk_tags']=['data_leakage']
+        self.assertTrue(any('require research_strict' in error for error in validate_manifest(d)))
 
 if __name__=='__main__': unittest.main()

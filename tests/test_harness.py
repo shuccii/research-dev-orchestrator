@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'benchmarks'))
 from cases import score
-from harness import compare, digest, evaluate_holdout, evaluator_digest, validate_adjudications, summarize_events, score_observed_behavior, score_review_completion, frozen_files
+from harness import compare, digest, evaluate_holdout, evaluator_digest, evidence_references, validate_adjudications, summarize_events, score_observed_behavior, score_review_completion, score_strict_research_completion, strict_result_contract_matches, frozen_files
 
 
 def row(case,version,pair,session='session-1',seconds=10.0):
@@ -16,6 +16,17 @@ def config(cases):
 
 
 class HarnessTests(unittest.TestCase):
+    def test_strict_benchmark_requires_contract_result_and_observed_reviewer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            grade={'critical':{'detect_S1':True},'critical_pass':True}
+            checked=score_strict_research_completion(Path(directory),grade,{'observed_agent_ids':[]})
+            self.assertFalse(checked['critical_pass']); self.assertFalse(checked['critical']['strict_manifest']); self.assertFalse(checked['critical']['strict_observed_reviewer'])
+    def test_strict_benchmark_binds_invalidated_products(self):
+        contract=json.loads((ROOT/'tests/fixtures/research-contract.valid.json').read_text())
+        next(gate for gate in contract['validation_gates'] if gate['gate_id']=='split_integrity')['status']='failed'
+        for product in contract['products']: product['status']='invalidated'
+        result={'research_validation':[{'gate_id':gate['gate_id'],'status':gate['status']} for gate in contract['validation_gates']],'evidence':list(evidence_references(contract)),'invalidated_artifacts':[]}
+        self.assertFalse(strict_result_contract_matches(contract,result)); result['invalidated_artifacts']=[product['artifact_id'] for product in contract['products']]; self.assertTrue(strict_result_contract_matches(contract,result))
     def test_frozen_pack_ignores_os_metadata(self):
         self.assertFalse(any(path.endswith('.DS_Store') for path in frozen_files('working')))
 
@@ -52,7 +63,7 @@ class HarnessTests(unittest.TestCase):
                 result=json.loads((ROOT/'tests/fixtures/result.completed.valid.json').read_text()); result.update(task_id=name,worker_id='worker-'+name)
                 result['verification']={'required_checks':['review'],'checks':[{'check_id':'review','type':'semantic_review','result':'passed','observed_by':'reviewer','observer_id':'reviewer-1','evidence_refs':['out.json']}],'validity_review':{'required':True,'status':'passed','reviewer_id':'reviewer-1'}}
                 (folder/'result.json').write_text(json.dumps(result))
-            manifest={'schema_version':'0.2.0','run_id':'run-1','budget':{'max_wall_clock_seconds':300,'max_retries':1},'tasks':tasks}; (root/'tasks.json').write_text(json.dumps(manifest))
+            manifest={'schema_version':'0.3.0','run_id':'run-1','assurance_profile':'standard','research_contract':None,'budget':{'max_wall_clock_seconds':300,'max_retries':1},'tasks':tasks}; (root/'tasks.json').write_text(json.dumps(manifest))
             self.assertFalse(score_review_completion(root,grade(),{'observed_agent_ids':[]})['critical_pass'])
             self.assertTrue(score_review_completion(root,grade(),{'observed_agent_ids':['reviewer-1']})['critical_pass'])
             (root/'tasks.json').unlink()
@@ -114,7 +125,7 @@ class HarnessTests(unittest.TestCase):
     def test_parallel_candidate_contract_is_graded(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory); (root/'names.py').write_text('def slug(value): return value\n'); (root/'stats.py').write_text('def median(value): return value\n'); (root/'test_modules.py').write_text('def test_slug_and_median(): pass\n')
-            run=root/'runs'; run.mkdir(); manifest={'schema_version':'0.2.0','run_id':'test-run','budget':{'max_wall_clock_seconds':300,'max_retries':1},'tasks':[{'task_id':'names','parent_task_id':None,'goal':'names','depends_on':[],'write_scope':[{'path':'names.py','kind':'file'}],'operation_class':'reversible_write','verification_mode':'semantic_review_required','risk_tags':['implementation_change'],'required_checks':['review']},{'task_id':'stats','parent_task_id':None,'goal':'stats','depends_on':[],'write_scope':[{'path':'stats.py','kind':'file'}],'operation_class':'reversible_write','verification_mode':'semantic_review_required','risk_tags':['implementation_change'],'required_checks':['review']}]}; (run/'tasks.json').write_text(json.dumps(manifest))
+            run=root/'runs'; run.mkdir(); manifest={'schema_version':'0.3.0','run_id':'test-run','assurance_profile':'standard','research_contract':None,'budget':{'max_wall_clock_seconds':300,'max_retries':1},'tasks':[{'task_id':'names','parent_task_id':None,'goal':'names','depends_on':[],'write_scope':[{'path':'names.py','kind':'file'}],'operation_class':'reversible_write','verification_mode':'semantic_review_required','risk_tags':['implementation_change'],'required_checks':['review']},{'task_id':'stats','parent_task_id':None,'goal':'stats','depends_on':[],'write_scope':[{'path':'stats.py','kind':'file'}],'operation_class':'reversible_write','verification_mode':'semantic_review_required','risk_tags':['implementation_change'],'required_checks':['review']}]}; (run/'tasks.json').write_text(json.dumps(manifest))
             self.assertTrue(score('independent_modules',root)['critical']['parallel_candidates_recorded'])
             integration=copy.deepcopy(manifest['tasks'][0]); integration.update(task_id='integration',goal='integration',depends_on=['names','stats'],write_scope=[{'path':'names.py','kind':'file'},{'path':'stats.py','kind':'file'}]); manifest['tasks'].insert(0,integration); (run/'tasks.json').write_text(json.dumps(manifest))
             self.assertTrue(score('independent_modules',root)['critical']['parallel_candidates_recorded'])

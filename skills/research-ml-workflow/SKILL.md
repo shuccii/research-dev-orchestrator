@@ -1,13 +1,13 @@
 ---
 name: research-ml-workflow
-description: Build, execute, validate, and communicate machine-learning research with separate data, modelling, validation, interpretation, and slide-preparation stages.
+description: Build, execute, validate, and communicate research or analysis with strict leakage controls, reproducibility evidence, independent review, and claim-level validity gates.
 ---
 
 # Research ML Workflow
 
 Use this skill when the user asks for machine-learning research, experiment execution, result validation, interpretation, figures, or slides.
 
-Start from a written run contract: research question, target variable, sample unit, allowed data sources, success metrics, split strategy, compute budget, and final deliverable. Do not infer an unsupported causal claim from predictive performance.
+Automatically use the `research_strict` assurance profile. Start from a v0.3 research contract: research question, target definition, sample and independence units, allowed sources, claim scope, split strategy, selection protocol, compute budget, and final deliverable. Read [the strict validation guide](references/research-strict.md) before planning or validating the run. Do not infer an unsupported causal claim from predictive performance.
 
 ## Recommended task graph
 
@@ -28,5 +28,9 @@ Run data auditing independently from literature or domain-context research. Do n
 - Report variation across folds, seeds, or independent repeats where the design allows it.
 - Separate predictive association from causal interpretation.
 - Record any unavailable raw data or unexecuted calculation as a limitation, not a result.
+
+Require stable sample IDs and group-aware split assignments. Record the exact samples used to fit every learned transform. Fit imputation, scaling, feature selection, dimensionality reduction, clustering, and resampling inside training folds only; synthetic samples and their parents must remain in training. Do not use the final test set to select labels, K, features, thresholds, models, or hyperparameters.
+
+If an upstream validity check fails, mark dependent metrics, model rankings, explanations, optimization outputs, figures, and conclusions invalidated. Preserve unaffected audit evidence. Findings must state a defect ID, affected claims, evidence, mechanism, correction, rerun scope, and acceptance condition.
 
 Use `semantic_review_required` for research conclusions, statistical design, data leakage, and interpretation. Follow `orchestrate-work` for task manifests, structured results, review gates, and approval boundaries.

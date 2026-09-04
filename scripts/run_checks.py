@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 def main():
-    commands=[[sys.executable,'-B','-m','unittest','discover','-s','tests','-v'],[sys.executable,'-m','json.tool','assets/task-result.schema.json'],[sys.executable,'-m','json.tool','assets/task-manifest.schema.json'],[sys.executable,'-B','scripts/verify_frozen_install.py']]
+    commands=[[sys.executable,'-B','-m','unittest','discover','-s','tests','-v'],[sys.executable,'-m','json.tool','assets/task-result.schema.json'],[sys.executable,'-m','json.tool','assets/task-manifest.schema.json'],[sys.executable,'-m','json.tool','assets/research-contract.schema.json'],[sys.executable,'-B','scripts/verify_frozen_install.py']]
     failed=[]
     for command in commands:
         p=subprocess.run(command,cwd=ROOT,stdout=subprocess.DEVNULL if 'json.tool' in command else None)

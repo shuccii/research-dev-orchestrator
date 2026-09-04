@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 
 from cases import CASES, HOLDOUT, independent_module_tasks, score
 from validate_task_result import check_one
+from validate_research_contract import evidence_references, validate_research_contract
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -34,7 +35,7 @@ def digest(value):
 
 
 def evaluator_digest():
-    paths=['benchmarks/harness.py','benchmarks/cases.py','benchmarks/PROTOCOL.md','scripts/manifest_helper.py','scripts/schema_subset.py','scripts/validate_task_result.py','assets/task-manifest.schema.json','assets/task-result.schema.json','assets/verification-policy.json']
+    paths=['benchmarks/harness.py','benchmarks/cases.py','benchmarks/PROTOCOL.md','scripts/manifest_helper.py','scripts/schema_subset.py','scripts/validate_task_result.py','scripts/validate_research_contract.py','assets/task-manifest.schema.json','assets/task-result.schema.json','assets/research-contract.schema.json','assets/verification-policy.json']
     value={name:(ROOT/name).read_text() for name in paths}
     return digest(value)
 
@@ -114,6 +115,39 @@ def score_review_completion(root, grade, telemetry):
     grade['critical_pass']=grade['critical_pass'] and passed
     return grade
 
+def score_strict_research_completion(root, grade, telemetry):
+    """Require a valid strict contract, integrated result, and observed independent reviewer."""
+    schema=json.loads((ROOT/'assets/task-result.schema.json').read_text()); observed=set(telemetry['observed_agent_ids'])
+    manifest_ok=contract_ok=result_ok=review_ok=False
+    for manifest_path in root.glob('**/tasks.json'):
+        try:
+            manifest=json.loads(manifest_path.read_text())
+            if manifest.get('assurance_profile')!='research_strict': continue
+            from manifest_helper import validate_manifest
+            if validate_manifest(manifest): continue
+            manifest_ok=True; contract_path=manifest_path.parent/manifest['research_contract']
+            if contract_path.is_symlink() or not contract_path.resolve().is_relative_to(manifest_path.parent.resolve()): continue
+            contract=json.loads(contract_path.read_text())
+            if validate_research_contract(contract,manifest,contract_path.parent): continue
+            contract_ok=True
+            for result_path in manifest_path.parent.rglob('result.json'):
+                data=json.loads(result_path.read_text())
+                verdict=check_one(result_path,schema,manifest,False); review=data.get('verification',{}).get('validity_review',{}); reviewer=review.get('reviewer_id')
+                bundle=data.get('reproduction_bundle'); bundle_ok=isinstance(bundle,str) and bundle in data.get('artifacts',[]) and (result_path.parent/bundle).is_file()
+                if verdict['valid'] and data.get('status')=='needs_revision' and strict_result_contract_matches(contract,data) and bundle_ok and review.get('status')=='passed' and reviewer and reviewer!=data.get('worker_id'):
+                    result_ok=True
+                    if reviewer in observed: review_ok=True
+        except (OSError,ValueError,TypeError,KeyError): continue
+    grade['critical'].update(strict_manifest=manifest_ok,strict_contract=contract_ok,strict_needs_revision_result=result_ok,strict_observed_reviewer=review_ok)
+    grade['critical_pass']=grade['critical_pass'] and all((manifest_ok,contract_ok,result_ok,review_ok))
+    return grade
+
+def strict_result_contract_matches(contract,data):
+    expected={gate['gate_id']:gate['status'] for gate in contract['validation_gates']}
+    actual={gate['gate_id']:gate['status'] for gate in data.get('research_validation',[])}
+    invalidated={product['artifact_id'] for product in contract['products'] if product['status']=='invalidated'}
+    return actual==expected and evidence_references(contract) <= set(data.get('evidence',[])) and set(data.get('invalidated_artifacts',[]))==invalidated
+
 
 def run_case(case_id, ref, output, model, effort, timeout, phase, pair, session_id, attempt=0):
     case = (CASES | HOLDOUT)[case_id]
@@ -182,6 +216,8 @@ def run_case(case_id, ref, output, model, effort, timeout, phase, pair, session_
         grade=score_observed_behavior(case_id,grade,telemetry)
         if ref=='working' and case_id=='independent_modules' and not unsafe_links:
             grade=score_review_completion(work,grade,telemetry)
+        if ref=='working' and case_id=='research_strict_defects' and not unsafe_links:
+            grade=score_strict_research_completion(work,grade,telemetry)
         # Only selected outputs, never the real home/config, are retained.
         import shutil
         shutil.copytree(work,raw/'workspace',symlinks=True,ignore=shutil.ignore_patterns('selected-pack','__pycache__'))

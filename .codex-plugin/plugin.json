@@ -1,7 +1,7 @@
 {
   "name": "research-dev-orchestrator",
-  "version": "0.2.0+codex.20260903060519",
-  "description": "Safe, evidence-backed orchestration for research, software delivery, and job-search work.",
+  "version": "0.3.0",
+  "description": "Evidence-backed orchestration with strict, auditable validation for research and lightweight workflows elsewhere.",
   "author": {
     "name": "Local developer"
   },
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "Research Dev Orchestrator",
     "shortDescription": "Plan, parallelize, verify, and safely integrate complex work.",
-    "longDescription": "Provides reusable Codex workflows for multi-agent research, machine-learning experiments, web and app delivery, and job-search support. It records evidence, separates execution from verification, and stops for approval before external side effects.",
+    "longDescription": "Provides reusable Codex workflows for research, machine-learning experiments, web and app delivery, and job-search support. Research tasks receive strict leakage, reproducibility, claim-evidence, and independent-review gates; ordinary work remains lightweight.",
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [],

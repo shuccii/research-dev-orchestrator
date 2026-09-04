@@ -1,6 +1,6 @@
 {
   "name": "research-dev-orchestrator",
-  "version": "0.3.0",
+  "version": "0.3.0+codex.20260904082552",
   "description": "Evidence-backed orchestration with strict, auditable validation for research and lightweight workflows elsewhere.",
   "author": {
     "name": "Local developer"

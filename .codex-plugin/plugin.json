@@ -1,15 +1,15 @@
 {
   "name": "research-dev-orchestrator",
-  "version": "0.3.0+codex.20260904082552",
-  "description": "Evidence-backed orchestration with strict, auditable validation for research and lightweight workflows elsewhere.",
+  "version": "0.4.1",
+  "description": "Evidence-backed research orchestration, constructive thesis review, research audits and defense rehearsal.",
   "author": {
     "name": "Local developer"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Research Dev Orchestrator",
-    "shortDescription": "Plan, parallelize, verify, and safely integrate complex work.",
-    "longDescription": "Provides reusable Codex workflows for research, machine-learning experiments, web and app delivery, and job-search support. Research tasks receive strict leakage, reproducibility, claim-evidence, and independent-review gates; ordinary work remains lightweight.",
+    "shortDescription": "Audit research, review theses, rehearse defenses, and verify complex work.",
+    "longDescription": "Provides strict scientific validation and source-grounded advisory research audits, constructive peer review, plan evaluation and adaptive defense questions. Retains lightweight software/job workflows and independent review boundaries.",
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [],

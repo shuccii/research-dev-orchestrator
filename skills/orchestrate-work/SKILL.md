@@ -23,6 +23,8 @@ Treat delegation as started only after the spawn operation returns a concrete wo
 
 Use a task manifest when a run has more than three tasks, delegated work, dependency ordering, parallel candidates, budgets, approval-required operations, or strict research. Read [the v0.3 contract](references/v0.3-contract.md) before creating or validating a manifest or result.
 
+For scientific audits, thesis/paper assessment, research-plan critique, and defense rehearsal, route to [research-review-workflow](../research-review-workflow/SKILL.md). Pure document critique may finish with scoped, explicitly unassessed numerical validity; executing experiments or integrating scientific claims still uses `research_strict`. Plugin/skill engineering itself uses `standard` with implementation/external-fact semantic review, rather than pretending to generate a scientific experiment.
+
 ## Validate and integrate
 
 Workers save structured results in the run directory. Validate a manifest before delegation, then validate each result against that same manifest. A completed result without a manifest is not integration-eligible.
@@ -36,6 +38,8 @@ Integrate only results that pass the required checks and review. Report actual a
 Select `research_strict` automatically for scientific research, statistical inference, machine-learning model construction or evaluation, scientific conclusions, research optimization, and research reporting. Routine business aggregation, log inspection, file transformation, ordinary software, and job-search work stay on `standard` unless the user explicitly requests research-grade assurance. Strict research always uses a manifest and research contract; it never takes the direct path.
 
 ## Approval and budget boundaries
+
+For laboratory authorship or conference/presentation tasks, read [lab-policy-workflow](../lab-policy-workflow/SKILL.md) and resolve applicable user-local policies. Record required faculty review, rehearsal, and approval separately from user authorization and technical/scientific validation. Do not embed internal laboratory rules in distributable artifacts.
 
 Classify operations as `read_only`, `reversible_write`, or `approval_required`. Treat submissions, messages, publication, deployment, spending, production-data changes, and material deletion as approval-required. A manifest is a preflight record; enforcement comes from the active Codex sandbox and approval controls.
 

@@ -8,7 +8,7 @@
     "run_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
     "task_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
     "parent_task_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
-    "worker_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+    "worker_id": {"type": "string", "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._-]{0,63}|/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*)$"},
     "started_at": {"type": "string", "format": "date-time"},
     "ended_at": {"type": "string", "format": "date-time"},
     "status": {"enum": ["completed", "needs_revision", "blocked", "awaiting_approval", "failed"]},
@@ -49,14 +49,14 @@
             "type": {"enum": ["command", "schema", "hash", "file_exists", "render", "semantic_review"]},
             "result": {"enum": ["passed", "failed", "not_run"]},
             "observed_by": {"enum": ["harness", "worker", "reviewer"]},
-            "observer_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+            "observer_id": {"type": "string", "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._-]{0,63}|/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*)$"},
             "evidence_refs": {"type": "array", "minItems": 1, "items": {"type": "string"}},
             "command": {"type": "string"}, "exit_code": {"type": "integer"}
           }, "additionalProperties": false
         }},
         "validity_review": {"type": "object", "required": ["required", "status", "reviewer_id"], "properties": {
           "required": {"type": "boolean"}, "status": {"enum": ["passed", "failed", "not_run"]},
-          "reviewer_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"}
+          "reviewer_id": {"type": ["string", "null"], "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._-]{0,63}|/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*)$"}
         }, "additionalProperties": false}
       }, "additionalProperties": false
     }

@@ -13,11 +13,15 @@ For a small, mechanically verifiable operation with no dependencies, parallel wo
 
 Code changes and scientific or factual judgments are not mechanical operations merely because tests can run. Keep their semantic review gate, even when implementation is performed directly.
 
+## Use only the relevant procedure
+
+For delegated/reviewed runs, read [execution, review and recovery](references/execution-control.md): native status routing, two-stage review, bounded repairs and evidence before completion. For errors, stalled work or unexpected numbers, use [root-cause-debugging](../root-cause-debugging/SKILL.md) before attempting a repair. Load domain skills and their references only when the task needs them; a required scientific or policy check is never optional merely to save context.
+
 ## Route the work
 
 The lead owns the plan, final answer, validation rules, and integration. Delegate only bounded tasks with distinct outcomes and write scopes. Use at most three concurrent workers by default, and parallelize only when tasks have no dependency or write-scope conflict and coordination is likely to save time.
 
-Give each worker its objective, inputs, permitted paths and tools, required artifacts and checks, stop condition, and output location. For code changes, use isolated worktrees or branches. A branch name alone is not isolation.
+Give each worker its objective, acceptance criteria, versioned inputs, permitted paths and tools, necessary references, required artifacts and checks, budget, stop condition, and output location. For code changes, use isolated worktrees or branches. A branch name alone is not isolation.
 
 Treat delegation as started only after the spawn operation returns a concrete worker identity. Preserve that returned identity verbatim in worker/reviewer result fields. Never wait without a known target, and never infer successful delegation or review from an attempted call. If spawning is unavailable or fails, attempt it only once. Continue safe implementation in the lead when useful, but record the distinct reviewer task as `blocked` with `blocked_reason: resource_unavailable`; do not attach that reason to a completed or needs-revision implementation result. Leave lead integration incomplete until an identifiable reviewer actually returns evidence.
 
@@ -31,9 +35,9 @@ Workers save structured results in the run directory. Validate a manifest before
 
 Keep execution success separate from scientific, technical, or factual validity. Require independent semantic review for research conclusions, external facts, statistical design, data leakage, security-sensitive work, job claims, and implementation changes. A unit-test pass confirms the tested behavior; it does not establish that a code change preserves intent.
 
-Give reviewers the run and task contracts, relevant diff, artifact and evidence indexes, and references needed for semantic judgment. Let them retrieve additional source material when required.
+Give reviewers the run and task contracts, relevant diff, artifact and evidence indexes, prior findings, and references needed for semantic judgment. Review requirements/scope before quality, while retaining mandatory integrity checks and strict-research coverage. Let reviewers retrieve additional source material when required. Use the execution-control procedure for status-sensitive recovery and repeat review; do not retry unchanged blocked work or integrate a lead-authored repair without independent review.
 
-Integrate only results that pass the required checks and review. Report actual artifacts and checks, unresolved limitations, unavailable metrics, and approval-required next actions.
+Integrate only results that pass the required checks and review. Before claiming completion, inspect the final artifacts and current diff, map every acceptance criterion to evidence, and run or verify the checks for the current claim as specified in execution-control. Report actual artifacts and checks, deferred minor findings, unresolved limitations, unavailable metrics, and approval-required next actions.
 
 Select `research_strict` automatically for scientific research, statistical inference, machine-learning model construction or evaluation, scientific conclusions, research optimization, and research reporting. Routine business aggregation, log inspection, file transformation, ordinary software, and job-search work stay on `standard` unless the user explicitly requests research-grade assurance. Strict research always uses a manifest and research contract; it never takes the direct path.
 

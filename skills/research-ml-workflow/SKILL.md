@@ -24,6 +24,12 @@ For research audits, thesis/paper review, research-plan evaluation, or interim/f
 
 Run data auditing independently from literature or domain-context research. Do not start model comparison before the target and evaluation scheme are defined. Parallelise models only when they share a frozen dataset version and evaluation protocol.
 
+## Diagnose unexpected results
+
+For execution errors, NaN/inf, suspicious accuracy, unstable fits or unit mismatches, use [root-cause-debugging](../root-cause-debugging/SKILL.md). Identify the first invalid pipeline stage before changing data or code; retain row IDs, invalid/excluded counts, hypotheses, probes and the original failing reproducer. A repaired computation does not restore invalidated claims until the affected research gates and independent review pass. Read saved output artifacts before reporting numeric values.
+
+Use [execution, review and recovery](../orchestrate-work/references/execution-control.md) for two-stage review and blocked-worker routing. Strict-research review coverage, schema fields and validity gates remain mandatory, including when an earlier requirements check fails.
+
 ## Required validation
 
 - Confirm the split unit prevents information leakage; do not use random pixel splits when independent samples or regions are required.

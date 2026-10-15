@@ -13,10 +13,12 @@ Use this skill for Web, iOS, Android, backend, or full-stack work with multiple 
 2. **Explorer or researcher**: reads the codebase, official documentation, and existing tests; it does not edit production files.
 3. **Implementer**: owns an isolated branch or worktree and a clearly bounded set of files.
 4. **Tester**: runs targeted automated tests and checks the stated acceptance criteria using the implementation artefacts.
-5. **Reviewer**: checks the diff for regressions, security, accessibility, error handling, and documentation impact.
+5. **Reviewer**: first checks requirements/scope against the actual artifacts and diff, then regressions, security, accessibility, error handling, and documentation impact. Mandatory integrity checks still run when requirements fail.
 6. **Release coordinator**: creates a verified handoff for deployment, release, store submission, or publication; it never performs those actions without explicit approval.
 
 Only parallelise implementation tasks with non-overlapping file ownership. Prefer one integrator to resolve all merge conflicts. If an issue crosses ownership boundaries, stop parallel editing and revise the plan.
+
+Use [execution, review and recovery](../orchestrate-work/references/execution-control.md) for worker-status routing, bounded repairs, repeat review and evidence before completion. Review a new lead-authored repair independently. If an error or unexpected behavior occurs, use [root-cause-debugging](../root-cause-debugging/SKILL.md) before changing code or configuration. Keep the existing v0.3 JSON result statuses; Claude-style `STATUS` labels do not replace the contract.
 
 ## Completion requirements
 

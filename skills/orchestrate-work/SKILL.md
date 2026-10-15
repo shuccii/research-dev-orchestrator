@@ -11,6 +11,8 @@ Use this skill when a request has independent workstreams, a research-to-deliver
 
 For a small, mechanically verifiable operation with no dependencies, parallel work, semantic risk, or approval boundary, the lead performs and checks it directly. Do not create a manifest or result contract, read orchestration schemas, delegate a worker, or wait for a reviewer just to format a file or run an existing check. Report the checked artifact and finish. This path does not enter the structured integration workflow below.
 
+Keep small-task and decision-only reports brief: observed result, the checks/evidence, and any unresolved action. Do not load full review procedures or repeat template sections solely to make the report look complete. Preserve required checks and distinguish supplied reports from personally verified facts.
+
 Code changes and scientific or factual judgments are not mechanical operations merely because tests can run. Keep their semantic review gate, even when implementation is performed directly.
 
 ## Use only the relevant procedure

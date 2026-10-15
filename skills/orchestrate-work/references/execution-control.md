@@ -31,12 +31,14 @@ Keep independent useful work moving, then wait on the known handle. A wait timeo
 
 Review artifacts and their actual diff, not the implementer's self-assessment. Give reviewers the acceptance criteria, original inputs, artifact versions, scope, prior findings and evidence index. Do not pre-label likely defects as harmless.
 
+Inventory the relevant worktree changes independently of the report's file list (`git status`, tracked diff and relevant untracked outputs). Follow changed data-loading/preprocessing dependencies when judging a plotting or metric claim. For "unchanged" claims, compare the prior/current artifacts or recompute within the allowed scope. Inspect the full source before asserting total row counts or exact line locators; a preview and a remembered trial history are insufficient.
+
 1. **Requirements and scope:** map each criterion to an inspected file/line, cell, figure or command result. Identify missing work, unauthorized additions and solutions to a different problem. Treat a report's justifications as claims to verify. Requirements failure blocks acceptance even if tests pass.
 2. **Quality and mandatory integrity checks:** assess relevant correctness, security/privacy, leakage, reproducibility, rules and error handling. If stage 1 fails, defer optional polish but still inspect mandatory integrity risks. Keep required `research_strict` review coverage and gates; a shorter preliminary review is not full-scope scientific approval.
 
 Save the two-stage findings in a review artifact and reference it from the existing `semantic_review` check. Do not extend schemas with new top-level fields. Use a criterion/evidence table and record strengths and unassessed areas.
 
-Severity follows impact: critical for fabricated evidence, leakage or defects changing central conclusions; major for failed acceptance, incorrect scope or unreliable output; minor for optional cosmetic improvements. Unauthorized data thinning is substantive even if described as readability. Required integrity checks and scientific readiness criteria cannot be downgraded to deferred minor work.
+Severity follows evidenced impact: critical for fabricated evidence, leakage or defects changing central conclusions; major for failed acceptance, incorrect scope or unreliable output; minor for optional cosmetic improvements. Unauthorized data thinning is substantive even if described as readability. Distinguish demonstrated impact from plausible risk rather than calling every scope defect fabrication or a changed scientific conclusion. Required integrity checks and scientific readiness criteria cannot be downgraded to deferred minor work.
 
 ## Repairs and repeat review
 
@@ -57,6 +59,8 @@ Immediately before a completion claim:
 3. Inspect independent review and validate the run/results. A worker's report or a reviewer's assertion alone is insufficient. Preserve distinct worker/reviewer identities and do not mark required checks passed on another agent's behalf without its observed evidence.
 4. State only what this evidence proves. Separate implemented, executed, structurally checked, semantically reviewed, scientifically valid, locally installed and externally published. Name failed, not-run and unavailable checks explicitly.
 
+Keep worker-reported errors, inspected facts, computed results, hypotheses and proposed actions distinct. Do not invent a cell index, traceback line, project constraint, outlier, permission or completed approval/repair to fill a report. Verify locators against current bytes; support an outlier claim with an actual diagnostic or keep it a hypothesis. Proposed handoff text uses future/conditional language until the operation is observed. A verification command that failed or never ran cannot be summarized as passed.
+
 For expensive immutable prior results, inspect current artifact hashes/provenance, scope and the recorded execution evidence rather than repeating an entire experiment solely for recency. Re-execute affected checks if inputs, code, environment or provenance changed. An old test result or cached success without this verification does not establish the current claim.
 
-The final run summary includes criterion/evidence matches, actual checks, review/repair history, deferred minor findings, unresolved limitations and next actions. Mechanical direct-path tasks remain direct: this reference does not create manifests or delegation for a small file transformation.
+The final run summary includes criterion/evidence matches, actual checks, review/repair history, deferred minor findings, unresolved limitations and next actions. Keep the readable report proportional: a small mechanical task or decision can use a brief result, criterion/check evidence and remaining action. Reference the retained command log instead of duplicating long outputs or filling empty review sections; two-stage review is an order of checks, not a demand for verbose headings. Required structured result/research-contract fields still apply when their workflow applies. Mechanical direct-path tasks remain direct: this reference does not create manifests or delegation for a small file transformation.

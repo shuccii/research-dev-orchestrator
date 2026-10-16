@@ -1,0 +1,48 @@
+"""Guards for the thesis-defense workflow (wording checks, not behavior scores)."""
+import os
+from pathlib import Path
+import re
+import unittest
+
+ROOT = Path(os.environ.get('RDO_GUIDANCE_ROOT', Path(__file__).resolve().parents[1]))
+SKILL = ROOT / 'skills/thesis-defense-workflow'
+
+
+class ThesisDefenseTests(unittest.TestCase):
+    def test_skill_frontmatter_and_links(self):
+        text = (SKILL / 'SKILL.md').read_text()
+        self.assertTrue(text.startswith('---\nname: thesis-defense-workflow\n'))
+        for target in re.findall(r'\]\(([^)#]+\.md)\)', text):
+            with self.subTest(link=target):
+                self.assertTrue((SKILL / target).resolve().exists())
+
+    def test_core_phases_and_boundaries(self):
+        text = (SKILL / 'SKILL.md').read_text()
+        for phrase in ('Fix the facts first', 'Backward schedule', 'issue log',
+                       'objective → result → conclusion', 'Question bank',
+                       'Rehearsals', 'Day-of', 'never predicts a pass',
+                       'never submits, uploads', 'unconfirmed'):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
+    def test_naist_reference_keeps_current_and_historical_apart(self):
+        text = (SKILL / 'references/naist.md').read_text()
+        for item in ('N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'no points or numeric thresholds',
+                     'do not treat as current', 'https://www.naist.jp/campuslife/degree/criteria.html'):
+            with self.subTest(item=item):
+                self.assertIn(item, text)
+
+    def test_routed_from_entrypoints(self):
+        for name in ('skills/orchestrate-work/SKILL.md', 'skills/research-review-workflow/SKILL.md'):
+            with self.subTest(file=name):
+                self.assertIn('thesis-defense-workflow', (ROOT / name).read_text())
+
+    def test_no_private_markers(self):
+        pattern = re.compile(r'/Users/|OneDrive|slack\.com|@gmail|@icloud')
+        for path in SKILL.rglob('*.md'):
+            with self.subTest(file=str(path)):
+                self.assertIsNone(pattern.search(path.read_text()))
+
+
+if __name__ == '__main__':
+    unittest.main()

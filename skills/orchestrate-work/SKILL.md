@@ -40,7 +40,7 @@ Treat delegation as started only after the spawn operation returns a concrete wo
 
 Use a task manifest when a run has more than three tasks, delegated work, dependency ordering, parallel candidates, budgets, approval-required operations, or strict research. Read [the v0.3 contract](references/v0.3-contract.md) before creating or validating a manifest or result.
 
-For scientific audits, thesis/paper assessment, research-plan critique, and defense rehearsal, route to [research-review-workflow](../research-review-workflow/SKILL.md). Pure document critique may finish with scoped, explicitly unassessed numerical validity; executing experiments or integrating scientific claims still uses `research_strict`. Plugin/skill engineering itself uses `standard` with implementation/external-fact semantic review, rather than pretending to generate a scientific experiment.
+For scientific audits, thesis/paper assessment, research-plan critique, and defense rehearsal, route to [research-review-workflow](../research-review-workflow/SKILL.md). For preparing a master's thesis defense end to end (schedule, slides, question bank, rehearsals, day-of), route to [thesis-defense-workflow](../thesis-defense-workflow/SKILL.md), which uses research-review-workflow for the substantive audit. Pure document critique may finish with scoped, explicitly unassessed numerical validity; executing experiments or integrating scientific claims still uses `research_strict`. Plugin/skill engineering itself uses `standard` with implementation/external-fact semantic review, rather than pretending to generate a scientific experiment.
 
 ## Validate and integrate
 

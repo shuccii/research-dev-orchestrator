@@ -15,9 +15,35 @@ The master's thesis is assessed as a scholarly paper in the field, with emphasis
 | N5 | 論文が学術的な記述法で適切に記述されている | The thesis is written in appropriate academic form | Structure, terminology, citation correctness and coverage, figure and table quality |
 | N6 | 研究倫理の問題に適切に対応している | Research-ethics issues are handled appropriately | Citation and reuse, data handling and retention, authorship and acknowledgments, consent/permissions where relevant |
 
-How it is decided (as stated on the page): each committee member evaluates every item; the student passes when each member's evaluation meets the set standard; results go to the faculty meeting after the thesis presentation (thesis review and examination). The page gives **no points or numeric thresholds**. The page also says committee members check the student's capstone record; any internal rubric in that system is not public and remains unconfirmed.
+How it is decided (as stated on the page): each committee member evaluates every item; the student passes when each member's evaluation meets the set standard; results go to the faculty meeting after the thesis presentation (thesis review and examination). The page gives **no points or numeric thresholds**. The page also says committee members check the capstone; the rubric itself is internal (see below).
 
 Doctoral theses use the same six items, with the prerequisite that the main part is published or to be published in peer-reviewed venues, and a public hearing (preliminary review) precedes the final examination.
+
+## Milestones, capstone and schedule (official page, checked 2026-10-16)
+
+NAIST treats the degree as the capstone and sets milestones before it.
+
+| Course | Milestone | Capstone |
+|---|---|---|
+| Master's | at least one interim report by November of year 2 | thesis review in February of year 2 |
+| Doctoral | one interim report by November of each year | thesis review in February of year 3 |
+
+A rubric for milestones and the capstone is available in the internal education-record system (教育カルテ). The page asks students to use it regularly to improve their own work. The agent cannot see it: ask the student to read it and record the items in the fact sheet.
+
+Master's schedule on the page:
+
+| Period | Event |
+|---|---|
+| December–January | Application for thesis review and thesis abstract, submitted through the education-record system by the deadline |
+| January–February | Faculty meeting approves the thesis title and committee |
+| mid to late February | Master's thesis presentation (thesis review and examination) |
+| late February or early March | Faculty meeting: report, deliberation and completion decision |
+
+The page states no presentation or Q&A length. Talk length, Q&A length, format and language vary by program and year: confirm them with the program office or advisor.
+
+## Not confirmed from official sources
+
+Secondary guides make claims such as specific talk/Q&A lengths for a program, failure rates, or area-specific criteria wording. Treat these as prompts to ask, not as rules, until an official source is found and recorded in the fact sheet.
 
 ## Historical field-specific document (do not treat as current)
 

@@ -18,19 +18,32 @@ class ThesisDefenseTests(unittest.TestCase):
 
     def test_core_phases_and_boundaries(self):
         text = (SKILL / 'SKILL.md').read_text()
-        for phrase in ('Fix the facts first', 'Backward schedule', 'issue log',
-                       'objective → result → conclusion', 'Question bank',
-                       'Rehearsals', 'Day-of', 'never predicts a pass',
-                       'never submits, uploads', 'unconfirmed'):
+        for phrase in ('Fix the facts first', 'Backward schedule', 'Issue log',
+                       'objective → result → conclusion', 'Track W', 'Track S', 'Track Q', 'Track R',
+                       'Rehearsal', 'Day-of', 'never predicts a pass',
+                       'never submits, uploads', 'never writes the thesis', 'unconfirmed'):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, text)
 
     def test_naist_reference_keeps_current_and_historical_apart(self):
         text = (SKILL / 'references/naist.md').read_text()
         for item in ('N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'no points or numeric thresholds',
-                     'do not treat as current', 'https://www.naist.jp/campuslife/degree/criteria.html'):
+                     'do not treat as current', 'https://www.naist.jp/campuslife/degree/criteria.html',
+                     'November of year 2', 'education-record system', 'Not confirmed from official sources'):
             with self.subTest(item=item):
                 self.assertIn(item, text)
+
+    def test_track_references(self):
+        checks = {
+            'references/writing.md': ('Question ↔ answer', 'Outline first', 'One sentence, one idea', 'does not produce text'),
+            'references/slides.md': ('Design backward', 'Slide numbers', 'Backup slides', 'outlook'),
+            'references/questions.md': ('Method principles', 'Answer patterns', 'Yes/no question', 'You do not know', 'public information'),
+        }
+        for name, phrases in checks.items():
+            text = (SKILL / name).read_text()
+            for phrase in phrases:
+                with self.subTest(file=name, phrase=phrase):
+                    self.assertIn(phrase, text)
 
     def test_routed_from_entrypoints(self):
         for name in ('skills/orchestrate-work/SKILL.md', 'skills/research-review-workflow/SKILL.md'):

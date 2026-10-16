@@ -1,6 +1,6 @@
 # Execution, review and recovery
 
-Read this for delegated/reviewed runs, repair loops and final integration. It adapts mi-orchestrator v0.3.0 (`8235d7f`) to Codex tools and the existing v0.3 JSON contracts. It does not require Claude commands, agent names or Superpowers to be installed.
+Read this for delegated/reviewed runs, repair loops and final integration. It adapts mi-orchestrator v0.3.3 to Codex tools and the existing v0.3 JSON contracts. It does not require Claude commands, agent names or Superpowers to be installed.
 
 ## Task handoff and status routing
 
@@ -20,6 +20,20 @@ Use native v0.3 JSON fields. Claude's `STATUS` labels below are an interpretatio
 Validate against the [contract](v0.3-contract.md). A `needs_revision` result is not integration eligible. Strict-research results in `completed` or `needs_revision` still require the research-contract fields and independent review mandated by that contract; if those are unavailable, report a valid `blocked` result with the actual reason instead of inventing review evidence.
 
 Never retry an unchanged blocked task. Record which input, prerequisite, instruction, scope or plan changed and why. Do not silently substitute a different scientific method or relax acceptance criteria. Apply actual user/workspace authorization to environment changes; this workflow does not require a new approval for every reversible local dependency operation.
+
+## Compact handoffs and risk-based review
+
+Keep v0.3 schemas, required fields, enums and validation gates unchanged. The task card records `risk_class=low` or `risk_class=normal` and report/result paths in the existing manifest task `goal` string. The worker records the classification/rationale and report path in `summary`/`evidence`; concerns remain in `risks` and actions in `next_actions`. Do not add `risk`, `report` or other top-level fields, or introduce new `risk_tags` values.
+
+A low card has no numerical results, no scientific claims, no applicable laboratory policy, and at most two artifact files. Otherwise classify normal; uncertainty means normal. This scheduling classification never downgrades `risk_tags`, verification mode, required checks, approval boundaries or `research_strict`. An implementation change still needs independent semantic review even if small.
+
+Workers save full reports/results to the supplied paths; the return message contains native status, a three-line summary (result, checks, concerns) and paths. The lead validates the full structured result using the validator, inspects status/check outcomes, concerns and artifact/evidence indexes, and passes report paths to reviewers. It need not read the full narrative on a clean handoff. For non-completed states, concerns, invalid/missing evidence, failed review or a stop, read the relevant report sections before routing. Since an implementation awaiting review is `needs_revision`, inspect its pending-review concern; do not mislabel it `completed` to get a shorter route. Before integration the lead still opens final artifacts and checks every acceptance criterion; file handoff only reduces repeated narrative reading.
+
+For independent low cards ready in the same wave, combine at most three in one reviewer invocation. Provide each card's criteria, inputs, diff, report path and check requirements. Produce a separate result and evidence mapping for each card, with the actual reviewer identity. A failing card never passes because another card passes; release only each card whose own dependencies/checks pass. Normal or uncertain cards receive individual review. A batched review retains all mandatory checks and the two-stage order for each card.
+
+For a clean review, stage 1 and stage 2 each use one line in the supporting report: "Conforms: no missing, extra or mistaken work (criterion/evidence refs)" and "Mandatory checks passed / not applicable (checked scope and evidence refs)". Expand findings, failures or unassessed areas when present. Required JSON fields and individual semantic-review evidence remain complete; one-line prose does not waive a check or invent a passing result.
+
+Batch independent reads/checks using the available tool orchestration; preserve individual outputs/exit codes and inspect each. Keep dependent steps, mutations and adaptive follow-ups sequential. Use focused source ranges and brief decisive log excerpts, retaining full evidence files for review.
 
 ## Observe real Codex handles
 

@@ -17,13 +17,24 @@ Code changes and scientific or factual judgments are not mechanical operations m
 
 ## Use only the relevant procedure
 
-For delegated/reviewed runs, read [execution, review and recovery](references/execution-control.md): native status routing, two-stage review, bounded repairs and evidence before completion. For errors, stalled work or unexpected numbers, use [root-cause-debugging](../root-cause-debugging/SKILL.md) before attempting a repair. Load domain skills and their references only when the task needs them; a required scientific or policy check is never optional merely to save context.
+The lead reads [execution, review and recovery](references/execution-control.md) for delegated/reviewed runs. Workers receive the inline instructions below and the task's required result/check fields; they need not load the lead's whole orchestration procedure. Reviewers receive the two-stage procedure and required check fields in their handoff. Use [root-cause-debugging](../root-cause-debugging/SKILL.md) for detailed diagnosis when the inline procedure is insufficient. Load domain references when their checks apply; scientific validity and policy checks remain mandatory.
+
+## Worker instructions to copy into each handoff
+
+Copy these instructions directly into work/compute handoffs, alongside the task's scope, result path and schema-required fields. A link to a debugging skill alone is insufficient.
+
+- For errors, NaN/inf, unexpected accuracy or failed tests: reproduce, compare a working case, state one hypothesis, run a discriminating probe, then make one cause-directed repair. Execute and retain actual outputs; code inspection is not observed data. Do not conceal failures by dropping rows, suppressing warnings or selecting a favorable seed.
+- Across read → preprocess → fit/evaluate, print shapes, columns, missing/non-finite counts, values and ranges in one diagnostic invocation (one Python command or disposable script). Inspect its output before choosing a repair. Stop a downstream stage that cannot safely consume invalid inputs and print that reason. After a loader repair, probe again before separately handling genuine missingness. Preserve that causal observation boundary.
+- After three ineffective repair attempts (including prior attempts on this card), stop repairs, inspect current code and assumptions, retain the attempted hypotheses and return a valid blocked handoff with the decision needed. A smaller retry budget wins; safe execution of the original test is still allowed.
+- Batch independent reads/checks in one tool orchestration, for example `Promise.allSettled` over tool calls. Inspect every result and exit code. Keep dependent operations, edits, approvals and adaptive follow-ups sequential. Do not batch a diagnostic with a repair selected before seeing its result.
+- Read only relevant source ranges; use `rg`, head/tail or equivalent. Retain full command evidence in files and quote about five decisive output lines with their log paths. Broaden inspection for scope, integrity or a failed check.
+- Save the full structured result and supporting report/evidence at the supplied paths. Reply with the native status, a three-line result/check/concern summary and paths. Keep unresolved concerns in `risks`/`next_actions`; implementation awaiting required review is `needs_revision`, never self-approved `completed`.
 
 ## Route the work
 
 The lead owns the plan, final answer, validation rules, and integration. Delegate only bounded tasks with distinct outcomes and write scopes. Use at most three concurrent workers by default, and parallelize only when tasks have no dependency or write-scope conflict and coordination is likely to save time.
 
-Give each worker its objective, acceptance criteria, versioned inputs, permitted paths and tools, necessary references, required artifacts and checks, budget, stop condition, and output location. For code changes, use isolated worktrees or branches. A branch name alone is not isolation.
+Give each worker its objective, acceptance criteria, versioned inputs, permitted paths and tools, necessary references, required artifacts and checks, budget, stop condition, output location and the inline worker instructions above. For code changes, use isolated worktrees or branches. A branch name alone is not isolation.
 
 Treat delegation as started only after the spawn operation returns a concrete worker identity. Preserve that returned identity verbatim in worker/reviewer result fields. Never wait without a known target, and never infer successful delegation or review from an attempted call. If spawning is unavailable or fails, attempt it only once. Continue safe implementation in the lead when useful, but record the distinct reviewer task as `blocked` with `blocked_reason: resource_unavailable`; do not attach that reason to a completed or needs-revision implementation result. Leave lead integration incomplete until an identifiable reviewer actually returns evidence.
 

@@ -10,7 +10,7 @@ Adapted for Codex from mi-orchestrator v0.3.0 (`8235d7f`), which draws on Superp
 ## Reproduce before repairing
 
 1. Read the full error and warnings. Record the command, input version, interpreter/environment, seed and notebook execution order needed to reproduce it. Reproduce in a disposable output area when possible; preserve the original data.
-2. Inspect recent changes and compare a working example. Across a pipeline, execute a small boundary probe showing actual columns, values, missing/non-finite counts, units and ranges (read → transform → fit → evaluate → plot) to locate the first invalid stage. Code inspection alone does not establish the values returned by a loader.
+2. Inspect recent changes and compare a working example. Across a pipeline, execute a small boundary probe showing actual columns, values, missing/non-finite counts, units and ranges (read → transform → fit → evaluate → plot) to locate the first invalid stage. Combine the stage probes in one diagnostic invocation (one Python command or disposable script), printing shapes as well as columns, missingness, values and ranges. Inspect that output before choosing a repair; stop unsafe downstream stages with an explicit reason. Code inspection alone does not establish the values returned by a loader.
 3. State one hypothesis and its evidence. Run the smallest probe that distinguishes it from an alternative; change one factor at a time. An unsuccessful probe is evidence to revise the hypothesis, not permission to accumulate speculative fixes.
 4. Before the repair, retain a minimal reproducer that fails for the observed reason. Make one cause-directed repair, rerun the same check, then the relevant surrounding checks. Verify the original symptom, not just a successful exit code.
 

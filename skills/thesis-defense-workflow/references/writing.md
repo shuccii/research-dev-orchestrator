@@ -1,6 +1,6 @@
 # Track W: thesis writing checks
 
-The student writes the thesis. The agent checks the draft and reports issues; it does not produce text to be submitted as the student's own.
+By default the student writes the thesis and the agent checks the draft and reports issues; it does not produce text to be submitted as the student's own. Drafting by the agent is possible only in [AI drafting mode](ai-drafting.md), with the advisor's agreement and the student's rewrite of every paragraph.
 
 ## Before drafting
 

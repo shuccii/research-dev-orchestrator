@@ -21,7 +21,7 @@ class ThesisDefenseTests(unittest.TestCase):
         for phrase in ('Fix the facts first', 'Backward schedule', 'Issue log',
                        'objective → result → conclusion', 'Track W', 'Track S', 'Track Q', 'Track R',
                        'Rehearsal', 'Day-of', 'never predicts a pass',
-                       'never submits, uploads', 'never writes the thesis', 'unconfirmed'):
+                       'never submits, uploads', 'never writes the thesis in place of the student unless AI drafting mode', 'unconfirmed'):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, text)
 
@@ -39,6 +39,9 @@ class ThesisDefenseTests(unittest.TestCase):
             'references/slides.md': ('Design backward', 'Slide numbers', 'Backup slides', 'outlook'),
             'references/questions.md': ('Method principles', 'Answer patterns', 'Yes/no question', 'You do not know', 'public information',
                                         'Where questions concentrate', 'follow-up chain'),
+            'references/ai-drafting.md': ('opt-in', 'P1', 'A user\'s request alone does not satisfy P1', 'May not',
+                                          'Add results, numbers, data, references', '[student-checked]',
+                                          'The agent never changes the marker itself', 'Explain test', 'AI-use log'),
             'references/review-checks.md': ('Tier 0', 'Tier 1', 'Tier 2', 'thesis_skeleton.py', 'T1', 'F3', 'M6', 'D2', 'E3',
                                             'never the saving', 'Do not report a pass for an item that was not looked at'),
         }

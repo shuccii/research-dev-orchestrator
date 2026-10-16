@@ -7,7 +7,7 @@ description: Prepare a graduate student for a master's thesis defense (thesis wr
 
 Use when a student prepares a master's thesis, its final presentation, the oral examination, or a rehearsal for them. Default target: a science/engineering master's program. For NAIST read [NAIST milestones and criteria](references/naist.md). For doctoral defenses, apply the same tracks and add the doctoral items noted there.
 
-This workflow prepares drafts and practice. It never submits, uploads, registers or contacts faculty, never writes the thesis in place of the student, and never predicts a pass. Use [research-review-workflow](../research-review-workflow/SKILL.md) for the substantive audit of claims and for interactive rehearsal. Use [lab-policy-workflow](../lab-policy-workflow/SKILL.md) and the user's local policy files for laboratory rules; never copy private rules into shared artifacts.
+This workflow prepares drafts and practice. It never submits, uploads, registers or contacts faculty, never writes the thesis in place of the student unless AI drafting mode is enabled under its preconditions, and never predicts a pass. Use [research-review-workflow](../research-review-workflow/SKILL.md) for the substantive audit of claims and for interactive rehearsal. Use [lab-policy-workflow](../lab-policy-workflow/SKILL.md) and the user's local policy files for laboratory rules; never copy private rules into shared artifacts.
 
 ## Structure
 
@@ -18,7 +18,7 @@ One preparation run has a fact sheet, a schedule, an issue log and four tracks. 
 | Facts | Fact sheet: each rule with source and date, or `unconfirmed` | [naist.md](references/naist.md) for NAIST |
 | Schedule | Backward plan with gates | this file, §2 |
 | Issue log | One list for all tracks: ID, source, location, severity, fix, done condition, status | this file, §3 |
-| Track W: writing | Thesis outline and draft checks | [writing.md](references/writing.md) |
+| Track W: writing | Thesis outline and draft checks; optional AI drafting | [writing.md](references/writing.md), [ai-drafting.md](references/ai-drafting.md) |
 | Track S: slides | Slide plan, slides, script, backup slides | [slides.md](references/slides.md) |
 | Track Q: questions | Question bank, answer outlines, rehearsal records | [questions.md](references/questions.md) |
 | Track R: review | Tiered checks, claim audit and mock examination | [review-checks.md](references/review-checks.md), research-review-workflow |
@@ -49,7 +49,7 @@ Every finding from the advisor, rehearsals, self-checks and AI review goes into 
 
 ## 4. Tracks
 
-- **W, writing:** the student writes; the agent checks structure, logic and wording with writing.md and reports issues. AI may check the student's draft but does not produce thesis text to be submitted as the student's own.
+- **W, writing:** by default the student writes and the agent checks structure, logic and wording with writing.md. AI drafting mode ([ai-drafting.md](references/ai-drafting.md)) lets the agent draft from the student's own material only after the advisor agreed on the scope of AI use and the rules were checked; every paragraph then goes through trace → student rewrite → tiered review → explain test, and AI use is logged for disclosure.
 - **S, slides:** design backward from purpose and conclusion (slides.md). Every slide maps to a thesis section and an institutional criterion.
 - **Q, questions:** generate questions from the actual thesis, slides, known weak points and the committee's public research areas (questions.md); rehearse one question at a time with research-review-workflow in `defense` mode. Never invent results to strengthen an answer.
 - **R, review:** review in tiers (review-checks.md). Tier 0: extract the thesis skeleton once with `scripts/thesis_skeleton.py` and reuse it across tracks. Tier 1: cheap checks on the skeleton. Tier 2: open the full text only where a check fails or the central claim depends on it, and send specific central claims to research-review-workflow. Do this once before slides v1 and once before the final version; carry findings into the issue log. The saving comes from scoping the deep read, never from skipping a check.

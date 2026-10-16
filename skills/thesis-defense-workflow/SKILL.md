@@ -11,7 +11,7 @@ This workflow prepares drafts and practice. It never submits, uploads, registers
 
 ## Structure
 
-One preparation run has a fact sheet, a schedule, an issue log and four tracks. Load only the reference for the track in hand.
+One preparation run has a fact sheet, a schedule, an issue log and four tracks. Load only the reference for the track in hand. Read the thesis once into a skeleton (Track R, Tier 0) and reuse it instead of re-reading the full text in every track.
 
 | Part | Output | Reference |
 |---|---|---|
@@ -21,7 +21,7 @@ One preparation run has a fact sheet, a schedule, an issue log and four tracks. 
 | Track W: writing | Thesis outline and draft checks | [writing.md](references/writing.md) |
 | Track S: slides | Slide plan, slides, script, backup slides | [slides.md](references/slides.md) |
 | Track Q: questions | Question bank, answer outlines, rehearsal records | [questions.md](references/questions.md) |
-| Track R: review | Claim audit and mock examination | research-review-workflow |
+| Track R: review | Tiered checks, claim audit and mock examination | [review-checks.md](references/review-checks.md), research-review-workflow |
 
 ## 1. Fix the facts first
 
@@ -52,7 +52,7 @@ Every finding from the advisor, rehearsals, self-checks and AI review goes into 
 - **W, writing:** the student writes; the agent checks structure, logic and wording with writing.md and reports issues. AI may check the student's draft but does not produce thesis text to be submitted as the student's own.
 - **S, slides:** design backward from purpose and conclusion (slides.md). Every slide maps to a thesis section and an institutional criterion.
 - **Q, questions:** generate questions from the actual thesis, slides, known weak points and the committee's public research areas (questions.md); rehearse one question at a time with research-review-workflow in `defense` mode. Never invent results to strengthen an answer.
-- **R, review:** run a research-review-workflow audit on the draft at least once before slides v1 and once before the final version; carry its findings into the issue log.
+- **R, review:** review in tiers (review-checks.md). Tier 0: extract the thesis skeleton once with `scripts/thesis_skeleton.py` and reuse it across tracks. Tier 1: cheap checks on the skeleton. Tier 2: open the full text only where a check fails or the central claim depends on it, and send specific central claims to research-review-workflow. Do this once before slides v1 and once before the final version; carry findings into the issue log. The saving comes from scoping the deep read, never from skipping a check.
 
 ## 5. Rehearsals, day-of and after
 

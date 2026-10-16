@@ -37,7 +37,10 @@ class ThesisDefenseTests(unittest.TestCase):
         checks = {
             'references/writing.md': ('Question ↔ answer', 'Outline first', 'One sentence, one idea', 'does not produce text'),
             'references/slides.md': ('Design backward', 'Slide numbers', 'Backup slides', 'outlook'),
-            'references/questions.md': ('Method principles', 'Answer patterns', 'Yes/no question', 'You do not know', 'public information'),
+            'references/questions.md': ('Method principles', 'Answer patterns', 'Yes/no question', 'You do not know', 'public information',
+                                        'Where questions concentrate', 'follow-up chain'),
+            'references/review-checks.md': ('Tier 0', 'Tier 1', 'Tier 2', 'thesis_skeleton.py', 'T1', 'F3', 'M6', 'D2', 'E3',
+                                            'never the saving', 'Do not report a pass for an item that was not looked at'),
         }
         for name, phrases in checks.items():
             text = (SKILL / name).read_text()

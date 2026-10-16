@@ -41,6 +41,17 @@ Master's schedule on the page:
 
 The page states no presentation or Q&A length. Talk length, Q&A length, format and language vary by program and year: confirm them with the program office or advisor.
 
+## Other official documents worth checking
+
+Reported from the 2026 student handbook and library pages by a secondary research summary; open the official documents to confirm before relying on them:
+
+- Completion requires passing the thesis review and the final examination after the required research supervision (completion requirements page).
+- Each student has two or more supervisors from different laboratories, one of them the main supervisor; the thesis title is declared and the thesis submitted with the main supervisor's approval (course regulations in the student handbook). In practice, advisor approval is a precondition for submission, so plan at least two rounds of advisor review before the deadline.
+- After completion, the final thesis is submitted as a PDF to the library's thesis submission system, whether or not it is made public (library thesis-submission pages).
+- Plagiarism is defined as misconduct in the handbook; rules for generative AI in theses were not found in public documents. Agree on any use with the advisor.
+
+Presentation lengths are set per program and year. A public Information Science area program for 2021 listed 20 minutes of presentation and 10 minutes of questions per student; this is not evidence for other areas or years.
+
 ## Not confirmed from official sources
 
 Secondary guides make claims such as specific talk/Q&A lengths for a program, failure rates, or area-specific criteria wording. Treat these as prompts to ask, not as rules, until an official source is found and recorded in the fact sheet.
